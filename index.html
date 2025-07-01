@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zira Music Room</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/images/default_album_art.png">
+</head>
+<body>
+    <div class="music-room-container">
+        <header>
+            <div class="header-top">
+                <div class="header-actions">
+                    <button id="themeToggle" title="Toggle Dark/Light Mode">🌙</button>
+                    <button id="menuBtn" title="Menu" aria-label="Menu">
+                        <svg width="28" height="28" viewBox="0 0 32 32" class="icon-svg"><circle cx="16" cy="8" r="2.2"/><circle cx="16" cy="16" r="2.2"/><circle cx="16" cy="24" r="2.2"/></svg>
+                    </button>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <button id="showFavBtn">❤️ Favorites</button>
+                    <button id="showHistoryBtn">🕑 History</button>
+                    <button id="shareMenuBtn">🔗 Share Room</button>
+                </div>
+            </div>
+            <h1>Zira Music Room</h1>
+            <p class="subtitle">Listen, share, and vibe together!</p>
+        </header>
+        <main>
+            <div class="search-bar-container">
+                <input type="text" id="searchInput" placeholder="Search songs or artists..." />
+                <button id="searchBtn" title="Search"><svg class="icon-svg" width="22" height="22" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" fill="none"/><line x1="16.5" y1="16.5" x2="21" y2="21" stroke="currentColor" stroke-width="2"/></svg></button>
+            </div>
+            <div class="player spotify-style">
+                <div class="album-art-large">
+                    <img src="assets/images/default_album_art.png" alt="Album Art" id="albumArtLarge">
+                </div>
+                <div class="song-info">
+                    <span id="songTitle">No song playing</span>
+                    <span id="songArtist"></span>
+                </div>
+                <audio id="audioPlayer" controls>
+                    <source id="audioSource" src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <div class="progress-bar-container">
+                    <span id="currentTime">0:00</span>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                    <span id="totalDuration">0:00</span>
+                </div>
+                <div class="controls">
+                    <button id="prevBtn" title="Previous" aria-label="Previous">
+                        <svg class="icon-svg" viewBox="0 0 32 32" width="28" height="28"><path d="M20 8v16l-10-8z" fill="currentColor"/><rect x="22" y="8" width="2" height="16" rx="1" fill="currentColor"/></svg>
+                        <span class="button-tooltip" id="prevTooltip">No previous song</span>
+                    </button>
+                    <button id="playPauseBtn" title="Play/Pause" aria-label="Play/Pause">
+                        <svg id="playPauseAnimated" class="icon-svg animated-playpause" viewBox="0 0 32 32" width="32" height="32">
+                            <g class="play-shape">
+                                <polygon points="8,6 26,16 8,26" fill="currentColor"/>
+                            </g>
+                            <g class="pause-shape" style="opacity:0;">
+                                <rect x="8" y="6" width="5" height="20" rx="2" fill="currentColor"/>
+                                <rect x="19" y="6" width="5" height="20" rx="2" fill="currentColor"/>
+                            </g>
+                        </svg>
+                        <span class="button-tooltip" id="playTooltip">No song to play</span>
+                    </button>
+                    <button id="favBtn" title="Favorite" aria-label="Favorite">
+                        <svg id="heartIcon" class="icon-svg animated-heart" viewBox="0 0 32 32" width="28" height="28">
+                            <path d="M16 28s-10-6.6-10-13.2C6 8.4 9.2 6 12.4 6c2.1 0 3.6 1.2 4.6 2.4C18 7.2 19.5 6 21.6 6 24.8 6 28 8.4 28 14.8 28 21.4 16 28 16 28z" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span class="button-tooltip" id="favTooltip">No song to favorite</span>
+                    </button>
+                    <button id="nextBtn" title="Next" aria-label="Next">
+                        <svg class="icon-svg" viewBox="0 0 32 32" width="28" height="28"><path d="M12 8v16l10-8z" fill="currentColor"/><rect x="8" y="8" width="2" height="16" rx="1" fill="currentColor"/></svg>
+                        <span class="button-tooltip" id="nextTooltip">No next song</span>
+                    </button>
+                </div>
+            </div>
+            <form id="addSongForm" class="add-song-form">
+                <input type="text" id="songTitleInput" placeholder="Song Title" required />
+                <input type="text" id="songArtistInput" placeholder="Artist" required />
+                <input type="text" id="songSrcInput" placeholder="Audio URL (optional)" />
+                <button type="submit">Add Song</button>
+            </form>
+            <section class="queue-section">
+                <h2>Queue</h2>
+                <ul id="queueList">
+                    <li>No songs in queue</li>
+                </ul>
+            </section>
+            <section class="history-section">
+                <h2>History</h2>
+                <div class="history-controls">
+                    <input type="text" id="userIdInput" placeholder="User ID (for demo)" />
+                    <button id="clearHistoryBtn">Clear History</button>
+                </div>
+                <ul id="historyList">
+                    <li>No songs played yet</li>
+                </ul>
+            </section>
+            <section class="export-section">
+                <button id="exportPlaylistBtn">Export Playlist (CSV)</button>
+            </section>
+        </main>
+        <footer>
+            <p>Made with <span style="color: #e25555;">&#9829;</span> by Zira</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+    <div class="share-notification" id="shareNotification">Room link copied!</div>
+    <audio id="clickSound" src="https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae2b2.mp3" preload="auto" style="display:none;"></audio>
+    <div id="toast" class="toast"></div>
+</body>
+</html>
