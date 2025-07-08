@@ -1,703 +1,529 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Optional Telegram WebApp SDK
-    let tg = null;
-    if (window.Telegram && window.Telegram.WebApp) {
-        tg = window.Telegram.WebApp;
-        tg.ready();
-    }
+console.log("Zira Music Room JS loaded!");
 
+document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const skipFwdBtn = document.getElementById('skipFwdBtn');
-    const loopBtn = document.getElementById('loopBtn');
-    const favBtn = document.getElementById('favBtn');
     const audioPlayer = document.getElementById('audioPlayer');
-    const songTitle = document.getElementById('songTitle');
-    const songArtist = document.getElementById('songArtist');
-    const albumArt = document.getElementById('albumArt');
-    const queueList = document.getElementById('queueList');
+    const playPauseBtn = document.getElementById('playPauseBtn');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const audioSource = document.getElementById('audioSource');
-    const addSongForm = document.getElementById('addSongForm');
-    const songTitleInput = document.getElementById('songTitleInput');
-    const songArtistInput = document.getElementById('songArtistInput');
-    const songSrcInput = document.getElementById('songSrcInput');
-    const historyList = document.getElementById('historyList');
-    const themeToggle = document.getElementById('themeToggle');
-    const shareRoomBtn = document.getElementById('shareRoomBtn');
+    const loopBtn = document.getElementById('loopBtn');
+    const albumArt = document.getElementById('albumArt');
     const albumArtLarge = document.getElementById('albumArtLarge');
-    const progressBar = document.getElementById('progressBar');
-    const currentTimeEl = document.getElementById('currentTime');
-    const totalDurationEl = document.getElementById('totalDuration');
-    const playIcon = document.getElementById('playIcon');
-    const pauseIcon = document.getElementById('pauseIcon');
-    const menuBtn = document.getElementById('menuBtn');
-    const dropdownMenu = document.getElementById('dropdownMenu');
-    const showFavBtn = document.getElementById('showFavBtn');
-    const showHistoryBtn = document.getElementById('showHistoryBtn');
-    const shareMenuBtn = document.getElementById('shareMenuBtn');
+    const audioLoadingSpinner = document.getElementById('audioLoadingSpinner');
+    const songTitle = document.getElementById('songTitle');
+    const songArtist = document.getElementById('songArtist');
+    const songDuration = document.getElementById('songDuration');
+    const songRequestedBy = document.getElementById('songRequestedBy');
+    const queueList = document.getElementById('queueList');
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
+    const searchResults = document.getElementById('searchResults');
+    const progressBar = document.getElementById('progressBar');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl = document.getElementById('totalTime');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
     const toast = document.getElementById('toast');
-    const prevTooltip = document.getElementById('prevTooltip');
-    const playTooltip = document.getElementById('playTooltip');
-    const favTooltip = document.getElementById('favTooltip');
-    const nextTooltip = document.getElementById('nextTooltip');
+    const openWebPlayerBtn = document.getElementById('openWebPlayerBtn');
 
     // --- State ---
-    let isPlaying = false;
-    let isLooping = false;
-    let currentSongIndex = 0;
     let queue = [];
-    let lastCurrentIndex = -1;
-    
-    // --- API Communication ---
-    let backendBase = "https://zira-music-backend.onrender.com";
+    let currentSongIndex = -1;
+    let isLooping = false;
+    let isPlaying = false;
+    let lastKnownBackendIndex = -1;
+    let isSearching = false;
+    let userInteracted = false;
+    let lastPlayedIndex = -1;
 
-    async function tryBackend(url) {
+    // --- API Configuration ---
+    const API_BASE_URL = "http://127.0.0.1:5000";
+
+    // --- Core Functions ---
+    async function fetchAndUpdateState() {
+        console.log('Fetching queue state...'); // ADDED LOG
         try {
-            const res = await fetch(url + '/api/queue');
-            if (res.ok) return url;
-        } catch (e) {}
-        return null;
-    }
-
-    (async function() {
-        // Try localhost first, then 127.0.0.1
-        let workingBase = await tryBackend("http://localhost:5000");
-        if (!workingBase) workingBase = await tryBackend("http://127.0.0.1:5000");
-        if (workingBase) backendBase = workingBase;
-    })();
-    
-    async function fetchQueue() {
-        try {
-            const res = await fetch(backendBase + '/api/queue');
-            if (!res.ok) throw new Error('Failed to fetch queue');
-            return await res.json();
-        } catch (err) {
-            showToast('Error fetching queue: ' + err.message);
-            return { queue: [], current: 0 };
-        }
-    }
-
-    async function addSong(title, artist, src = "") {
-        await fetch(backendBase + '/api/queue', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, artist, src })
-        });
-        await updateUI();
-        // Automatically play the latest song
-        await playSongByIndex(queue.length - 1);
-    }
-
-    async function playSongByIndex(index) {
-        await fetch(backendBase + '/api/play/' + index, { method: 'POST' });
-        await updateUI();
-    }
-
-    async function nextSongAPI() {
-        await fetch(backendBase + '/api/next', { method: 'POST' });
-        await updateUI();
-    }
-
-    async function prevSongAPI() {
-        await fetch(backendBase + '/api/prev', { method: 'POST' });
-        await updateUI();
-    }
-
-    async function fetchHistory(userId) {
-        const res = await fetch(backendBase + '/api/history');
-        return res.json();
-    }
-
-    // --- UI Update Function ---
-    async function pollQueue() {
-        try {
-            const res = await fetch(backendBase + '/api/queue');
-            if (!res.ok) throw new Error('Failed to fetch queue');
-            const data = await res.json();
-            if (data.current !== lastCurrentIndex) {
-                lastCurrentIndex = data.current;
-                updatePlayerUI(data);
-                audioPlayer.load();
-                audioPlayer.play().catch(() => {
-                    showToast('Click ▶️ Play to start playback.');
-                });
+            const response = await fetch(`${API_BASE_URL}/api/queue`);
+            if (!response.ok) {
+                console.error('Fetch queue failed:', response.status, response.statusText); // ADDED LOG
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        } catch (err) {
-            showToast('Error fetching queue: ' + err.message);
-        }
-    }
-
-    function updatePlayerUI(data) {
-        if (!data.queue || data.queue.length === 0) {
-            songTitle.textContent = 'No song playing';
-            songArtist.textContent = '';
-            document.getElementById('songDuration')?.remove();
-            document.getElementById('songRequestedBy')?.remove();
-            audioSource.src = '';
-            audioPlayer.load();
-            albumArtLarge.src = 'assets/images/default_album_art.png';
-            return;
-        }
-        const nowPlaying = data.queue[data.current] || data.queue[0];
-        songTitle.textContent = nowPlaying.title;
-        songArtist.textContent = nowPlaying.artist;
-        // Add duration and requested_by if not present
-        let durationEl = document.getElementById('songDuration');
-        if (!durationEl) {
-            durationEl = document.createElement('div');
-            durationEl.id = 'songDuration';
-            durationEl.style.color = '#b3b3e6';
-            durationEl.style.fontSize = '0.95rem';
-            songTitle.parentNode.appendChild(durationEl);
-        }
-        durationEl.textContent = nowPlaying.duration ? `Duration: ${nowPlaying.duration}` : '';
-        let requestedByEl = document.getElementById('songRequestedBy');
-        if (!requestedByEl) {
-            requestedByEl = document.createElement('div');
-            requestedByEl.id = 'songRequestedBy';
-            requestedByEl.style.color = '#b3b3e6';
-            requestedByEl.style.fontSize = '0.95rem';
-            songTitle.parentNode.appendChild(requestedByEl);
-        }
-        requestedByEl.textContent = nowPlaying.requested_by ? `Requested by: ${nowPlaying.requested_by}` : '';
-        albumArtLarge.src = nowPlaying.albumArt || 'assets/images/default_album_art.png';
-        // Always use src if present
-        let srcUrl = nowPlaying.src || (nowPlaying.video_id ? backendBase + '/api/stream/' + nowPlaying.video_id : '');
-        audioPlayer.pause();
-        audioSource.src = srcUrl;
-        audioPlayer.load();
-        audioPlayer.play().catch(() => {
-            showToast('Click ▶️ Play to start playback.');
-        });
-    }
-
-    function renderHistory(history) {
-        historyList.classList.remove('fade-in');
-        void historyList.offsetWidth;
-        historyList.classList.add('fade-in');
-        historyList.innerHTML = '';
-        if (!history || history.length === 0) {
-            historyList.innerHTML = '<li>No songs played yet</li>';
-            return;
-        }
-        history.forEach(song => {
-            const li = document.createElement('li');
-            li.textContent = `${song.title} - ${song.artist}`;
-            historyList.appendChild(li);
-        });
-    }
-
-    // --- Event Handlers ---
-    async function handlePlay() {
-        if (!isPlaying) {
-            // Fetch the current queue and song from the backend
-            const data = await fetchQueue();
-            updatePlayerUI(data);
-
-            audioPlayer.play();
-            showPauseIcon();
-            isPlaying = true;
-            tg?.HapticFeedback.impactOccurred('light');
-        } else {
-            audioPlayer.pause();
-            showPlayIcon();
-            isPlaying = false;
-            tg?.HapticFeedback.impactOccurred('light');
-        }
-    }
-
-    function handleSkip() {
-        // This would send a request to your backend: fetch('/api/skip')
-        console.log("Requesting to skip song...");
-        songTitle.textContent = "Loading next song...";
-        songArtist.textContent = "";
-        // After the request, the backend would provide the next song's data
-        // and you would call fetchQueue() again.
-        tg?.HapticFeedback.notificationOccurred('success');
-    }
-
-    function handleLoop() {
-        isLooping = !isLooping;
-        audioPlayer.loop = isLooping;
-        loopBtn.style.opacity = isLooping ? '1' : '0.5';
-        tg?.HapticFeedback.impactOccurred('rigid');
-    }
-    
-    function handleFav() {
-        // This would send a request to your backend: fetch('/api/fav', { method: 'POST' })
-        favBtn.textContent = '❤️';
-        console.log("Added to favorites!");
-        tg?.HapticFeedback.notificationOccurred('success');
-    }
-
-    function renderQueue(filteredQueue) {
-        const list = filteredQueue || queue;
-        queueList.classList.remove('fade-in');
-        void queueList.offsetWidth;
-        queueList.classList.add('fade-in');
-        queueList.innerHTML = '';
-        if (list.length === 0) {
-            queueList.innerHTML = '<li>No songs in queue</li>';
-            return;
-        }
-        list.forEach((song, idx) => {
-            const li = document.createElement('li');
-            li.textContent = `${song.title} - ${song.artist}`;
-            // Add Play Now button
-            const playNowBtn = document.createElement('button');
-            playNowBtn.textContent = '▶️ Play Now';
-            playNowBtn.className = 'play-now-btn';
-            playNowBtn.onclick = () => playSongByIndex(idx);
-            li.appendChild(playNowBtn);
-            if (queue.indexOf(song) === currentSongIndex) {
-                li.style.fontWeight = 'bold';
-                li.style.color = '#5e60ce';
+            const data = await response.json();
+            queue = data.queue || [];
+            const backendCurrentIndex = data.current;
+            if (backendCurrentIndex !== lastKnownBackendIndex) {
+                console.log('Backend index changed:', backendCurrentIndex, '->', currentSongIndex); // ADDED LOG
+                currentSongIndex = backendCurrentIndex;
+                lastKnownBackendIndex = backendCurrentIndex;
+                loadSong(currentSongIndex, true);
+                if (userInteracted) {
+                    console.log('User interacted. Attempting auto-play after state update.'); // ADDED LOG
+                    audioPlayer.load();
+                    audioPlayer.play().catch(e => {
+                        console.warn('Autoplay blocked after fetch/update:', e.message, e); // ADDED LOG
+                        showToast('Click ▶️ Play to start playback.');
+                    });
+                }
             }
-            queueList.appendChild(li);
-        });
+            renderQueue();
+            updatePlayerControls();
+        } catch (error) {
+            console.error("Error in fetchAndUpdateState:", error); // ADDED LOG
+            showToast("Error: Could not connect to the server.");
+        }
     }
 
-    function loadSong(index) {
-        if (queue.length === 0) {
-            songTitle.textContent = 'No song playing';
-            songArtist.textContent = '';
-            document.getElementById('songDuration')?.remove();
-            document.getElementById('songRequestedBy')?.remove();
-            audioSource.src = '';
-            audioPlayer.load();
-            albumArtLarge.src = 'assets/images/default_album_art.png';
+    function loadSong(index, animate = false) {
+        console.log('loadSong called for index:', index); // ADDED LOG
+        if (index < 0 || index >= queue.length) {
+            songTitle.textContent = "No song playing";
+            songArtist.textContent = "";
+            albumArt.src = 'assets/images/default_album_art.png';
+            songDuration.textContent = '0:00';
+            songRequestedBy.textContent = '';
+            audioPlayer.src = "";
+            updateProgressBar();
+            console.log('No song to load or index out of bounds. Player cleared.'); // ADDED LOG
             return;
         }
         const song = queue[index];
+        if (animate) {
+            albumArtLarge.classList.remove('fade-in');
+            songTitle.classList.remove('fade-in');
+            songArtist.classList.remove('fade-in');
+            setTimeout(() => {
+                albumArtLarge.classList.add('fade-in');
+                songTitle.classList.add('fade-in');
+                songArtist.classList.add('fade-in');
+            }, 10);
+        }
         songTitle.textContent = song.title;
         songArtist.textContent = song.artist;
-        // Add duration and requested_by if not present
-        let durationEl = document.getElementById('songDuration');
-        if (!durationEl) {
-            durationEl = document.createElement('div');
-            durationEl.id = 'songDuration';
-            durationEl.style.color = '#b3b3e6';
-            durationEl.style.fontSize = '0.95rem';
-            songTitle.parentNode.appendChild(durationEl);
-        }
-        durationEl.textContent = song.duration ? `Duration: ${song.duration}` : '';
-        let requestedByEl = document.getElementById('songRequestedBy');
-        if (!requestedByEl) {
-            requestedByEl = document.createElement('div');
-            requestedByEl.id = 'songRequestedBy';
-            requestedByEl.style.color = '#b3b3e6';
-            requestedByEl.style.fontSize = '0.95rem';
-            songTitle.parentNode.appendChild(requestedByEl);
-        }
-        requestedByEl.textContent = song.requested_by ? `Requested by: ${song.requested_by}` : '';
-        audioSource.src = song.src || (song.video_id ? backendBase + '/api/stream/' + song.video_id : '');
-        audioPlayer.load();
-        albumArtLarge.src = song.albumArt || 'assets/images/default_album_art.png';
-        audioPlayer.play().catch(() => {
-            showToast('Click ▶️ Play to start playback.');
-        });
-    }
-
-    function playPause() {
-        if (audioPlayer.paused) {
-            audioPlayer.play();
-            showPauseIcon();
-            playPauseBtn.innerHTML = '';
-            playPauseBtn.appendChild(pauseIcon);
+        songDuration.textContent = song.duration || '';
+        songRequestedBy.textContent = song.requested_by ? `Requested by: ${song.requested_by}` : '';
+        albumArt.src = song.albumArt || 'assets/images/default_album_art.png';
+        albumArt.onload = () => albumArtLarge.classList.add('fade-in');
+        showAudioLoading(true);
+        if (song.src) {
+            const fullSongSrc = `${API_BASE_URL}/static/mp3/${song.src}`;
+            audioPlayer.src = fullSongSrc;
+            console.log('AudioPlayer SRC set to:', fullSongSrc); // ADDED LOG
+            audioPlayer.load(); // Explicitly load the new source
+            console.log('AudioPlayer.load() called.'); // ADDED LOG
+            if (userInteracted) {
+                console.log('User interacted. Attempting play in loadSong().'); // ADDED LOG
+                audioPlayer.play().catch(e => {
+                    console.warn('Autoplay blocked in loadSong():', e.message, e); // ADDED LOG
+                    showToast('Click ▶️ Play to start playback.');
+                });
+            }
         } else {
+            audioPlayer.src = "";
+            console.warn('Song has no SRC in queue data. Clearing audioPlayer.src.'); // ADDED LOG
+        }
+        updatePlayerControls();
+        renderQueue();
+    }
+
+    function showAudioLoading(show) {
+        if (audioLoadingSpinner) audioLoadingSpinner.style.display = show ? 'block' : 'none';
+    }
+
+    function togglePlayPause() {
+        console.log('togglePlayPause called. current paused state:', audioPlayer.paused); // ADDED LOG
+        if (audioPlayer.paused) {
+            if (audioPlayer.src) {
+                console.log('Attempting to play from togglePlayPause. Current src:', audioPlayer.src); // ADDED LOG
+                audioPlayer.play().catch(e => {
+                    console.error("Playback failed via togglePlayPause:", e.message, e); // ADDED LOG
+                    showToast("Playback failed: " + e.message);
+                });
+            } else {
+                console.warn('togglePlayPause: Audio source is empty, cannot play.'); // ADDED LOG
+                showToast('No song loaded to play.');
+            }
+        } else {
+            console.log('Attempting to pause from togglePlayPause.'); // ADDED LOG
             audioPlayer.pause();
-            showPlayIcon();
-            playPauseBtn.innerHTML = '';
-            playPauseBtn.appendChild(playIcon);
         }
     }
 
-    function nextSong() {
-        if (queue.length === 0) return;
-        currentSongIndex = (currentSongIndex + 1) % queue.length;
-        loadSong(currentSongIndex);
-        renderQueue();
+    async function skipTo(direction) {
+        console.log(`Skipping to ${direction}...`); // ADDED LOG
+        const endpoint = direction === 'next' ? '/api/next' : '/api/prev';
+        try {
+            await fetch(API_BASE_URL + endpoint, { method: 'POST' });
+            await fetchAndUpdateState();
+        } catch (error) {
+            console.error(`Error skipping ${direction}:`, error); // ADDED LOG
+            showToast("Server communication error.");
+        }
     }
 
-    function prevSong() {
-        if (queue.length === 0) return;
-        currentSongIndex = (currentSongIndex - 1 + queue.length) % queue.length;
-        loadSong(currentSongIndex);
-        renderQueue();
+    async function playSongByIndex(index) {
+        console.log(`playSongByIndex called for index: ${index}`); // ADDED LOG
+        try {
+            await fetch(`${API_BASE_URL}/api/play/${index}`, { method: 'POST' });
+            await fetchAndUpdateState();
+        } catch (error) {
+            console.error(`Error playing song by index ${index}:`, error); // ADDED LOG
+            showToast("Server communication error.");
+        }
+    }
+
+    async function searchSongs(query) {
+        console.log('Searching for:', query); // ADDED LOG
+        if (!query.trim()) {
+            searchResults.innerHTML = '';
+            searchResults.style.display = 'none';
+            console.log('Search query empty, clearing results.'); // ADDED LOG
+            return;
+        }
+        isSearching = true;
+        searchResults.innerHTML = '<div style="padding:16px; color:#b3b3e6;">Searching...</div>';
+        searchResults.style.display = 'block';
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
+            if (!response.ok) {
+                console.error('Search API failed:', response.status, response.statusText); // ADDED LOG
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log('Search results received:', data.results); // ADDED LOG
+            renderSearchResults(data.results || []);
+        } catch (error) {
+            console.error('Error during search:', error); // ADDED LOG
+            searchResults.innerHTML = '<div style="padding:16px; color:#e25555;">Search failed.</div>';
+        }
+        isSearching = false;
+    }
+
+    async function addSongToQueueFromSearch(song) {
+        console.log('Attempting to add song to queue:', song.title); // ADDED LOG
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/download_and_add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(song)
+            });
+            const data = await response.json();
+            if (data.success) {
+                showToast(`"${song.title}" added to queue!`);
+                await fetchAndUpdateState();
+                if (queue.length > 0) {
+                    markUserInteracted();
+                    // Play the newly added song (which is now at the end of the queue)
+                    await playSongByIndex(queue.length - 1);
+                }
+            } else if (data.message && data.message.includes('already in queue')) {
+                showToast('Song already in queue.');
+                await fetchAndUpdateState();
+            } else {
+                showToast(data.error || 'Error adding song.');
+                console.error('Error adding song from search:', data.error); // ADDED LOG
+            }
+        } catch (error) {
+            showToast("Error adding song.");
+            console.error('Network error adding song:', error); // ADDED LOG
+        }
+        searchInput.value = '';
+        searchResults.style.display = 'none';
+    }
+
+    function renderQueue() {
+        queueList.innerHTML = '';
+        if (queue.length === 0) {
+            queueList.innerHTML = '<li>Queue is empty</li>';
+            return;
+        }
+        queue.forEach((song, index) => {
+            const li = document.createElement('li');
+            li.className = (index === currentSongIndex) ? 'active fade-in' : 'fade-in';
+            li.textContent = `${song.title} - ${song.artist}`;
+            li.style.cursor = 'pointer';
+            li.title = 'Click to play this song';
+            li.onclick = () => {
+                console.log('Queue item clicked:', index, song.title); // ADDED LOG
+                markUserInteracted(); // Ensure user interaction for direct queue play
+                playSongByIndex(index);
+            };
+            queueList.appendChild(li);
+        });
+        // Only update audio if the song changed
+        if (queue && queue.length > 0 && currentSongIndex >= 0 && currentSongIndex !== lastPlayedIndex) {
+            const song = queue[currentSongIndex];
+            const audioPlayer = document.getElementById('audioPlayer');
+            if (audioPlayer && song.src) {
+                audioPlayer.src = `${API_BASE_URL}/static/mp3/${song.src}`;
+                audioPlayer.load();
+                audioPlayer.play();
+                lastPlayedIndex = currentSongIndex;
+            }
+        }
+    }
+
+    function renderSearchResults(results) {
+        searchResults.innerHTML = '';
+        if (results.length === 0) {
+            searchResults.innerHTML = '<div style="padding:16px; color:#b3b3e6;">No results found.</div>';
+            searchResults.style.display = 'block';
+            return;
+        }
+        results.forEach(song => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.innerHTML = `
+                <img class="search-result-thumb" src="${song.thumbnail || 'assets/images/default_album_art.png'}" alt="thumb">
+                <div class="search-result-info">
+                    <div class="search-result-title">${song.title}</div>
+                    <div class="search-result-artist">${song.artist || ''}</div>
+                </div>
+                <button class="search-result-add" style="margin-left:auto; background:#5e60ce; color:#fff; border:none; border-radius:6px; padding:6px 14px; cursor:pointer;">Add</button>
+            `;
+            div.querySelector('.search-result-add').onclick = (e) => {
+                e.stopPropagation();
+                addSongToQueueFromSearch({
+                    title: song.title,
+                    artist: song.artist,
+                    video_id: song.video_id,
+                    albumArt: song.thumbnail,
+                    src: '', // This will be filled by backend after download
+                });
+            };
+            searchResults.appendChild(div);
+        });
+        searchResults.style.display = 'block';
+    }
+
+    function updatePlayerControls() {
+        if (isPlaying) {
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+        } else {
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+        }
+        loopBtn.style.opacity = isLooping ? '1' : '0.5';
+        prevBtn.disabled = queue.length < 2;
+        nextBtn.disabled = queue.length < 2;
+    }
+
+    function formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    function updateProgressBar() {
+        if (!audioPlayer.duration) {
+            progressBar.value = 0;
+            currentTimeEl.textContent = '0:00';
+            totalTimeEl.textContent = '0:00';
+            return;
+        }
+        progressBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+        totalTimeEl.textContent = formatTime(audioPlayer.duration);
+    }
+
+    function showToast(message) {
+        toast.textContent = message;
+        toast.className = 'toast show';
+        setTimeout(() => { toast.className = 'toast'; }, 3000);
+    }
+
+    function markUserInteracted() {
+        if (!userInteracted) {
+            console.log('User interacted for the first time!'); // ADDED LOG
+            userInteracted = true;
+            // Optionally, try to play a silent sound on first interaction
+            // to prime the audio context if needed for some browsers
+            // document.getElementById('clickSound').play().catch(e => console.warn('Click sound play blocked:', e));
+        }
     }
 
     // --- Event Listeners ---
-    if (playPauseBtn) playPauseBtn.addEventListener('click', () => {
-        if (playPauseBtn.disabled) {
-            if (playTooltip) showTooltip(playPauseBtn, playTooltip, 'No song to play');
-            shakeButton(playPauseBtn);
-            showToast('Queue is empty! Add a song to start.');
-        } else {
-            console.log('Play/Pause button clicked');
-        }
-    });
-    if (skipFwdBtn) skipFwdBtn.addEventListener('click', () => {
-        console.log('Skip button clicked');
-        handleSkip();
-    });
-    if (loopBtn) loopBtn.addEventListener('click', () => {
-        console.log('Loop button clicked');
-        handleLoop();
-    });
-    if (favBtn) favBtn.addEventListener('click', () => {
-        if (favBtn.disabled) {
-            if (favTooltip) showTooltip(favBtn, favTooltip, 'No song to favorite');
-            shakeButton(favBtn);
-            showToast('No song to favorite.');
-        } else {
-            console.log('Favorite button clicked');
-            handleFav();
-        }
-    });
-    if (prevBtn) prevBtn.addEventListener('click', () => {
-        if (prevBtn.disabled) {
-            if (prevTooltip) showTooltip(prevBtn, prevTooltip, 'No previous song');
-            shakeButton(prevBtn);
-            showToast('No previous song.');
-        } else {
-            console.log('Previous button clicked');
-            prevSong();
-        }
-    });
-    if (audioPlayer) audioPlayer.addEventListener('ended', () => {
-        if (queue.length > 1 && currentSongIndex < queue.length - 1) {
-            nextSong();
-        } else {
-            showToast('Queue is empty! Add a song to start.');
-        }
-    });
+    playPauseBtn.addEventListener('click', () => { markUserInteracted(); togglePlayPause(); console.log('playPauseBtn clicked!'); }); // ADDED LOG
+    nextBtn.addEventListener('click', () => { markUserInteracted(); skipTo('next'); console.log('nextBtn clicked!'); }); // ADDED LOG
+    prevBtn.addEventListener('click', () => { markUserInteracted(); skipTo('prev'); console.log('prevBtn clicked!'); }); // ADDED LOG
+    loopBtn.addEventListener('click', () => { markUserInteracted(); isLooping = !isLooping; audioPlayer.loop = isLooping; updatePlayerControls(); showToast(isLooping ? "Loop enabled" : "Loop disabled"); console.log('loopBtn clicked! Looping:', isLooping); }); // ADDED LOG
     
-    // Initialize default states
-    if (loopBtn) loopBtn.style.opacity = '0.5';
-
-    // --- Initial Load ---
-    // When the Mini App opens, you might want to immediately fetch the current state
-    // fetchQueue().then(data => updatePlayerUI(data));
-
-    // --- Initial Render ---
-    async function updateUI() {
-        let data;
-        try {
-            data = await fetchQueue();
-            if (data.queue && data.queue.length > 0) {
-                queue = data.queue;
-                currentSongIndex = data.current;
-            } else if (queue.length > 0) {
-                // Use local queue if backend returns empty
-                data = { queue, current: currentSongIndex };
-            } else {
-                // No data from backend and no local queue
-                data = { queue: [], current: 0 };
+    audioPlayer.addEventListener('play', () => {
+        isPlaying = true;
+        showAudioLoading(false);
+        updatePlayerControls();
+        console.log('audioPlayer: play event fired!'); // ADDED LOG
+    });
+    audioPlayer.addEventListener('pause', () => {
+        isPlaying = false;
+        updatePlayerControls();
+        console.log('audioPlayer: pause event fired!'); // ADDED LOG
+    });
+    audioPlayer.addEventListener('waiting', () => { showAudioLoading(true); console.log('audioPlayer: waiting event fired!'); }); // ADDED LOG
+    audioPlayer.addEventListener('playing', () => { showAudioLoading(false); console.log('audioPlayer: playing event fired!'); }); // ADDED LOG
+    audioPlayer.addEventListener('canplay', () => { showAudioLoading(false); console.log('audioPlayer: canplay event fired! Duration:', audioPlayer.duration); }); // ADDED LOG
+    audioPlayer.addEventListener('ended', () => {
+        console.log('audioPlayer: ended event fired!'); // ADDED LOG
+        if (!isLooping) skipTo('next');
+    });
+    audioPlayer.addEventListener('timeupdate', updateProgressBar);
+    audioPlayer.addEventListener('error', (event) => {
+        showAudioLoading(false);
+        // More detailed error logging
+        let errorMsg = 'Unknown audio error';
+        if (audioPlayer.error) {
+            switch (audioPlayer.error.code) {
+                case MediaError.MEDIA_ERR_ABORTED:
+                    errorMsg = 'You aborted the audio playback.';
+                    break;
+                case MediaError.MEDIA_ERR_NETWORK:
+                    errorMsg = 'A network error caused the audio download to fail.';
+                    break;
+                case MediaError.MEDIA_ERR_DECODE:
+                    errorMsg = 'The audio playback was aborted due to a corruption problem or because the media uses features the browser does not support.';
+                    break;
+                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                    errorMsg = 'The audio could not be loaded, either because the server or network failed or because the format is not supported.';
+                    break;
+                default:
+                    errorMsg = `An unknown audio error occurred (Code: ${audioPlayer.error.code}).`;
             }
-        } catch (e) {
-            // If fetchQueue fails, use local queue
-            data = { queue, current: currentSongIndex };
         }
-        renderQueue();
-        // Use local queue for player if backend is unreachable
-        if (data.queue && data.queue.length > 0) {
-            loadSong(data.current || 0);
-        } else {
-            loadSong(0);
-        }
-        // Fetch and render history (per-user if userId is set)
-        const userId = userIdInput.value ? userIdInput.value.trim() : '';
-        let historyData = { history: [] };
-        try {
-            historyData = await fetchHistory(userId);
-        } catch (e) {}
-        renderHistory(historyData.history);
-        updateButtonStates();
-    }
-
-    // Initial render
-    updateUI();
-
-    addSongForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const title = songTitleInput.value.trim();
-        const artist = songArtistInput.value.trim();
-        const src = songSrcInput.value.trim();
-        if (title && artist) {
-            await addSong(title, artist, src);
-            songTitleInput.value = '';
-            songArtistInput.value = '';
-            songSrcInput.value = '';
-            showToast('Song added to queue!');
-        }
-    });
-
-    // Theme toggle logic
-    function setTheme(mode) {
-        if (mode === 'light') {
-            document.body.classList.add('light-mode');
-            themeToggle.textContent = '🌞';
-            localStorage.setItem('theme', 'light');
-        } else {
-            document.body.classList.remove('light-mode');
-            themeToggle.textContent = '🌙';
-            localStorage.setItem('theme', 'dark');
-        }
-    }
-
-    themeToggle.addEventListener('click', () => {
-        const isLight = document.body.classList.contains('light-mode');
-        setTheme(isLight ? 'dark' : 'light');
-    });
-
-    // Load theme preference
-    setTheme(localStorage.getItem('theme') || 'dark');
-
-    // Share room logic
-    function showToast(message) {
-        toast.textContent = message;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2100);
-    }
-
-    shareRoomBtn.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(window.location.href);
-            shareRoomBtn.textContent = '✅';
-            showToast('Room link copied!');
-            setTimeout(() => {
-                shareRoomBtn.textContent = document.body.classList.contains('light-mode') ? '🔗' : '🔗';
-            }, 1200);
-        } catch (e) {
-            showToast('Failed to copy room link.');
-        }
-    });
-
-    audioPlayer.addEventListener('timeupdate', () => {
-        if (!audioPlayer.duration) return;
-        const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        progressBar.style.width = percent + '%';
-        currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
-        totalDurationEl.textContent = formatTime(audioPlayer.duration);
-    });
-
-    audioPlayer.addEventListener('loadedmetadata', () => {
-        totalDurationEl.textContent = formatTime(audioPlayer.duration);
-    });
-
-    function formatTime(sec) {
-        if (isNaN(sec)) return '0:00';
-        const m = Math.floor(sec / 60);
-        const s = Math.floor(sec % 60);
-        return `${m}:${s.toString().padStart(2, '0')}`;
-    }
-
-    // Add ripple effect to player control buttons
-    function addRippleEffect(button) {
-        button.addEventListener('click', function(e) {
-            const rect = button.getBoundingClientRect();
-            const ripple = document.createElement('span');
-            ripple.className = 'ripple';
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-            ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-            button.appendChild(ripple);
-            setTimeout(() => ripple.remove(), 500);
-        });
-    }
-    [playPauseBtn, prevBtn, skipFwdBtn].forEach(btn => {
-        if (btn) addRippleEffect(btn);
-    });
-
-    // Sound feedback
-    const clickSound = new Audio('assets/audio/click.mp3');
-    clickSound.volume = 0.18;
-    [playPauseBtn, prevBtn, skipFwdBtn].forEach(btn => {
-        if (btn) btn.addEventListener('mousedown', () => {
-            clickSound.currentTime = 0;
-            clickSound.play();
-        });
-    });
-
-    function showPlayIcon() {
-        playIcon.style.display = '';
-        pauseIcon.style.display = 'none';
-    }
-    function showPauseIcon() {
-        playIcon.style.display = 'none';
-        pauseIcon.style.display = '';
-    }
-
-    // Dropdown menu logic
-    menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dropdownMenu.classList.toggle('show');
-    });
-    document.addEventListener('click', (e) => {
-        if (!dropdownMenu.contains(e.target) && e.target !== menuBtn) {
-            dropdownMenu.classList.remove('show');
-        }
-    });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') dropdownMenu.classList.remove('show');
-    });
-
-    showFavBtn.addEventListener('click', () => {
-        showToast('Favorites feature coming soon!');
-        dropdownMenu.classList.remove('show');
-    });
-    showHistoryBtn.addEventListener('click', () => {
-        document.getElementById('userIdInput').scrollIntoView({ behavior: 'smooth' });
-        dropdownMenu.classList.remove('show');
-    });
-    shareMenuBtn.addEventListener('click', () => {
-        shareRoomBtn.click();
-        dropdownMenu.classList.remove('show');
-    });
-
-    // Search bar logic
-    searchBtn.addEventListener('click', filterQueue);
-    searchInput.addEventListener('input', filterQueue);
-
-    function filterQueue() {
-        const query = searchInput.value.trim().toLowerCase();
-        const filtered = queue.filter(song =>
-            song.title.toLowerCase().includes(query) ||
-            song.artist.toLowerCase().includes(query)
-        );
-        renderQueue(filtered);
-    }
-
-    // Animate favorite pulse (for future favorite button)
-    function favPulse(element) {
-        element.classList.remove('fav-pulse');
-        void element.offsetWidth;
-        element.classList.add('fav-pulse');
-    }
-
-    function updateButtonStates() {
-        if (playPauseBtn) playPauseBtn.disabled = queue.length === 0;
-        if (skipFwdBtn) skipFwdBtn.disabled = queue.length === 0;
-        if (favBtn) favBtn.disabled = queue.length === 0;
-        if (prevBtn) prevBtn.disabled = queue.length === 0;
-        if (loopBtn) loopBtn.disabled = queue.length === 0;
-        if (playTooltip) playTooltip.style.display = queue.length === 0 ? '' : 'none';
-        if (prevTooltip) prevTooltip.style.display = (queue.length <= 1 || currentSongIndex === 0) ? '' : 'none';
-        if (favTooltip) favTooltip.style.display = queue.length === 0 ? '' : 'none';
-        if (nextTooltip) nextTooltip.style.display = queue.length === 0 ? '' : 'none';
-    }
-
-    function shakeButton(btn) {
-        btn.classList.remove('shake');
-        void btn.offsetWidth;
-        btn.classList.add('shake');
-    }
-
-    function showTooltip(btn, tooltip, msg) {
-        tooltip.textContent = msg;
-        btn.classList.add('show-tooltip');
-        setTimeout(() => btn.classList.remove('show-tooltip'), 1200);
-    }
-
-    // Only poll the backend if it is reachable
-    let backendReachable = false;
-    (async function() {
-        try {
-            const res = await fetch('http://localhost:5000/api/queue');
-            if (res.ok) backendReachable = true;
-        } catch (e) {}
-        if (backendReachable) {
-            setInterval(async () => {
-                await updateUI();
-            }, 5000); // Poll every 5 seconds
-        }
-    })();
-
-    // --- Audio Error Handling ---
-    audioPlayer.onerror = function() {
-        showToast('⚠️ Failed to load or play the song. Click ▶️ Play to retry.');
+        console.error('audioPlayer: error event fired!', errorMsg, audioPlayer.error, event); // ADDED DETAILED LOG
+        showToast(`⚠️ Failed to load or play the song: ${errorMsg}`);
         songTitle.textContent = 'Error playing song';
         songArtist.textContent = '';
-        albumArtLarge.src = 'assets/images/default_album_art.png';
-    };
+        albumArt.src = 'assets/images/default_album_art.png';
+    });
 
-    // Ensure a global Play button is always visible and triggers playback
-    let playNowBtnGlobal = document.getElementById('playNowBtnGlobal');
-    if (!playNowBtnGlobal) {
-        playNowBtnGlobal = document.createElement('button');
-        playNowBtnGlobal.textContent = '▶️ Play';
-        playNowBtnGlobal.id = 'playNowBtnGlobal';
-        playNowBtnGlobal.onclick = () => {
-            audioPlayer.play().catch(err => {
-                showToast('Playback failed: ' + err.message);
-            });
+    progressBar.addEventListener('input', (e) => {
+        if (audioPlayer.duration) {
+            const seekTime = (e.target.value / 100) * audioPlayer.duration;
+            audioPlayer.currentTime = seekTime;
+            console.log('ProgressBar input: seeking to', seekTime); // ADDED LOG
+        } else {
+            console.warn('ProgressBar input: No duration available for seeking.'); // ADDED LOG
+        }
+    });
+
+    // FIX: Removed the conflicting .onclick assignment
+    searchInput.addEventListener('input', () => {
+        console.log('searchInput input event fired. Value:', searchInput.value); // ADDED LOG
+        searchSongs(searchInput.value);
+    });
+    searchBtn.addEventListener('click', () => {
+        markUserInteracted();
+        console.log('searchBtn clicked!'); // ADDED LOG
+        searchSongs(searchInput.value);
+    });
+
+    document.getElementById('joinRoomBtn')?.addEventListener('click', markUserInteracted);
+
+    if (openWebPlayerBtn) {
+        openWebPlayerBtn.onclick = () => {
+            window.open('http://127.0.0.1:5500/zira-music-bot/frontend-mini-app/index.html', '_blank');
         };
-        document.querySelector('.player').appendChild(playNowBtnGlobal);
     }
 
-    // Show current audio source URL for debugging
-    const audioSrcDebug = document.createElement('div');
-    audioSrcDebug.id = 'audioSrcDebug';
-    audioSrcDebug.style.fontSize = '10px';
-    audioSrcDebug.style.color = '#888';
-    document.querySelector('.player').appendChild(audioSrcDebug);
-
-    // Show loading spinner while audio is loading
-    audioPlayer.addEventListener('waiting', () => {
-        showToast('Loading audio...');
-    });
-    audioPlayer.addEventListener('playing', () => {
-        showToast('Playing!');
-    });
-
-    setInterval(pollQueue, 2000);
-
-    // --- Demo Song Button Handler ---
-    const demoBtn = document.getElementById('addDemoSongBtn');
-    if (demoBtn) {
-        demoBtn.disabled = false;
-        demoBtn.onclick = async function() {
-            console.log('Demo Song button clicked!');
-            const demoSong = {
-                title: 'Ed Sheeran - Shape of You',
-                artist: 'Ed Sheeran',
-                albumArt: 'https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg',
-                src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-            };
-            // Add to the front-end queue directly
-            queue.push(demoSong);
-            currentSongIndex = queue.length - 1;
-            showToast('Demo song added (frontend only)!');
-            await updateUI();
-        };
-        console.log('Demo Song button wired up!');
-    } else {
-        console.error('Demo Song button not found in DOM!');
-        showToast('Demo Song button not found!');
+    // --- Initialization ---
+    function init() {
+        console.log('Initializing app...'); // ADDED LOG
+        fetchAndUpdateState();
+        setInterval(fetchAndUpdateState, 2000);
     }
-
-    // --- Fallback for missing elements ---
-    if (!audioPlayer) console.warn('audioPlayer element not found!');
-    if (!playPauseBtn) console.warn('playPauseBtn not found!');
-    if (!skipFwdBtn) console.warn('skipFwdBtn not found!');
-    if (!favBtn) console.warn('favBtn not found!');
-    if (!prevBtn) console.warn('prevBtn not found!');
-    if (!loopBtn) console.warn('loopBtn not found!');
-    if (!playTooltip) console.warn('playTooltip not found!');
-    if (!prevTooltip) console.warn('prevTooltip not found!');
-    if (!favTooltip) console.warn('favTooltip not found!');
-    if (!nextTooltip) console.warn('nextTooltip not found!');
-
-    window.addEventListener('error', function(e) {
-        console.error('Global error:', e.message, e);
-        alert('An unexpected error occurred: ' + e.message);
-    });
-
-    console.log('Zira Music Room script loaded. Attaching handlers...');
-
+    init();
 });
+
+// REMOVED THE FOLLOWING LINE:
+// document.getElementById('searchBtn').onclick = () => alert('Button works!');
+
+// Minimal, robust queue rendering and polling with click-to-play and smooth playback
+const queueList = document.getElementById('queueList');
+const audioPlayer = document.getElementById('audioPlayer');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const API_BASE_URL = "http://127.0.0.1:5000";
+let lastPlayedIndex = -1;
+let isPlaying = false;
+
+async function fetchAndRenderQueue() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/queue`);
+        if (!response.ok) throw new Error("Failed to fetch queue");
+        const data = await response.json();
+        renderQueue(data.queue, data.current);
+    } catch (err) {
+        queueList.innerHTML = '<li style="color:red;">Error loading queue</li>';
+    }
+}
+
+function renderQueue(queue, currentIndex) {
+    queueList.innerHTML = '';
+    if (!queue || queue.length === 0) {
+        queueList.innerHTML = '<li>Queue is empty</li>';
+        return;
+    }
+    queue.forEach((song, idx) => {
+        const li = document.createElement('li');
+        li.textContent = `${song.title} - ${song.artist}`;
+        if (idx === currentIndex) {
+            li.style.fontWeight = 'bold';
+            li.style.background = '#e0e0ff';
+        }
+        li.style.cursor = 'pointer';
+        li.title = 'Click to play this song';
+        li.onclick = () => playSongByIndex(idx);
+        queueList.appendChild(li);
+    });
+
+    // Only update audio if the song changed
+    if (queue && queue.length > 0 && currentIndex >= 0 && currentIndex !== lastPlayedIndex) {
+        const song = queue[currentIndex];
+        if (audioPlayer && song.src) {
+            audioPlayer.src = `${API_BASE_URL}/static/mp3/${song.src}`;
+            audioPlayer.load();
+            if (isPlaying) audioPlayer.play();
+            lastPlayedIndex = currentIndex;
+        }
+    }
+}
+
+async function playSongByIndex(index) {
+    try {
+        await fetch(`${API_BASE_URL}/api/play/${index}`, { method: 'POST' });
+        isPlaying = true;
+        fetchAndRenderQueue();
+    } catch (err) {
+        alert('Failed to play song');
+    }
+}
+
+playPauseBtn.onclick = () => {
+    if (audioPlayer.paused) {
+        audioPlayer.play();
+        isPlaying = true;
+    } else {
+        audioPlayer.pause();
+        isPlaying = false;
+    }
+};
+
+prevBtn.onclick = async () => {
+    await fetch(`${API_BASE_URL}/api/prev`, { method: 'POST' });
+    isPlaying = true;
+    fetchAndRenderQueue();
+};
+
+nextBtn.onclick = async () => {
+    await fetch(`${API_BASE_URL}/api/next`, { method: 'POST' });
+    isPlaying = true;
+    fetchAndRenderQueue();
+};
+
+audioPlayer.onended = () => {
+    nextBtn.click();
+};
+
+fetchAndRenderQueue();
+setInterval(fetchAndRenderQueue, 2000);

@@ -17,3 +17,9 @@ SUPPORT_GROUP = os.getenv("SUPPORT_GROUP", "")
 UPDATES_CHANNEL = os.getenv("UPDATES_CHANNEL", "")
 
 API_KEY = os.getenv('API_KEY') 
+
+# --- Admin/Reporting ---
+# Set your admin group chat ID here (as an integer, e.g. -1001234567890)
+ADMIN_GROUP_ID = 4823177816
+# List of admin user IDs (comma-separated in .env, or hardcode as list)
+ADMINS = [int(x) for x in os.getenv("ADMINS", "").split(",") if x.strip().isdigit()] 

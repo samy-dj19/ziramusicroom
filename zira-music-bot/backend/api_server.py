@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file, Response
+from flask import Flask, request, jsonify, send_file, Response, send_from_directory
 from flask_cors import CORS
 import io, csv
 import yt_dlp
@@ -6,28 +6,22 @@ import requests
 import json
 import os
 
+# Define absolute paths for project root, queue file, and MP3 folder
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+QUEUE_FILE = os.path.join(PROJECT_ROOT, 'queue.json')
+MP3_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'mp3')
+
 app = Flask(__name__)
 CORS(app, origins="*")
 
-# In-memory queue and state for demo
-music_queue = [
-    {"title": "Mann Mera", "artist": "Gajendra Verma", "src": ""},
-    {"title": "Shape of You", "artist": "Ed Sheeran", "src": ""},
-    {"title": "Blinding Lights", "artist": "The Weeknd", "src": ""}
-]
+# In-memory queue and state
+music_queue = []  # Initialize as empty, will be loaded from file
 current_song_index = 0
 is_paused = False
-favorites = []
-history = []
-
-user_histories = {}
-
-QUEUE_FILE = 'queue.json'
-
-def get_user_id():
-    return str(request.args.get('user_id') or request.json.get('user_id') or 'global')
 
 def save_queue():
+    # Ensure the directory exists
+    os.makedirs(os.path.dirname(QUEUE_FILE), exist_ok=True)
     with open(QUEUE_FILE, 'w', encoding='utf-8') as f:
         json.dump(music_queue, f, ensure_ascii=False, indent=2)
 
@@ -43,13 +37,19 @@ load_queue()
 
 @app.route('/api/queue', methods=['GET'])
 def get_queue():
-    return jsonify({"queue": music_queue, "current": current_song_index, "is_paused": is_paused, "favorites": favorites})
+    return jsonify({"queue": music_queue, "current": current_song_index, "is_paused": is_paused})
 
 @app.route('/api/queue', methods=['POST'])
 def add_song():
     global current_song_index
     data = request.json
     print(f"[API] Adding song: {data}")
+    # Prevent duplicates (fix KeyError)
+    if not isinstance(data, dict):
+        return jsonify({"success": False, "error": "Invalid data format"}), 400
+    if any(isinstance(item, dict) and item.get('video_id') == data.get('video_id') for item in music_queue):
+        print(f"[API] Song {data.get('video_id')} already in queue.")
+        return jsonify({"success": False, "message": "Song already in queue", "queue": music_queue, "current": current_song_index})
     music_queue.append({
         "title": data.get("title", "Unknown"),
         "artist": data.get("artist", "Unknown"),
@@ -57,7 +57,7 @@ def add_song():
         "albumArt": data.get("albumArt", ""),
         "src": data.get("src", "")
     })
-    current_song_index = len(music_queue) - 1  # Set to the newly added song
+    current_song_index = len(music_queue) - 1  # Always set to the newly added song
     save_queue()
     print(f"[API] Current song index set to {current_song_index}")
     return jsonify({"success": True, "queue": music_queue, "current": current_song_index})
@@ -90,58 +90,25 @@ def resume():
 
 @app.route('/api/skip', methods=['POST'])
 def skip():
+    # This just advances to the next song. The frontend will handle playback.
     global current_song_index
-    user_id = get_user_id()
     if music_queue:
-        song = music_queue[current_song_index]
-        history.append(song)
-        user_histories.setdefault(user_id, []).append(song)
         current_song_index = (current_song_index + 1) % len(music_queue)
-        save_queue()
     return jsonify({"current": current_song_index})
 
 @app.route('/api/playlist', methods=['GET'])
 def get_playlist():
     return jsonify({"queue": music_queue})
 
-@app.route('/api/fav', methods=['POST'])
-def add_fav():
-    data = request.json
-    song = data.get("song")
-    if song and song not in favorites:
-        favorites.append(song)
-    return jsonify({"favorites": favorites})
-
 @app.route('/api/end', methods=['POST'])
 def end():
+    # Clears the entire queue
     global music_queue, current_song_index, is_paused
-    user_id = get_user_id()
-    while music_queue:
-        song = music_queue.pop(0)
-        history.append(song)
-        user_histories.setdefault(user_id, []).append(song)
+    music_queue.clear()
     current_song_index = 0
     is_paused = False
     save_queue()
     return jsonify({"queue": music_queue, "current": current_song_index, "is_paused": is_paused})
-
-@app.route('/api/history', methods=['GET'])
-def get_history():
-    return jsonify({"history": history})
-
-@app.route('/api/history/user', methods=['GET'])
-def get_user_history():
-    user_id = get_user_id()
-    return jsonify({"history": user_histories.get(user_id, [])})
-
-@app.route('/api/history/clear', methods=['POST'])
-def clear_history():
-    user_id = get_user_id()
-    if user_id in user_histories:
-        user_histories[user_id] = []
-    if user_id == 'global':
-        history.clear()
-    return jsonify({"success": True})
 
 @app.route('/api/playlist/export', methods=['GET'])
 def export_playlist():
@@ -149,7 +116,7 @@ def export_playlist():
     writer = csv.writer(output)
     writer.writerow(['Title', 'Artist', 'Source'])
     for song in music_queue:
-        writer.writerow([song['title'], song['artist'], song['src']])
+        writer.writerow([song.get('title', ''), song.get('artist', ''), song.get('src', '')])
     output.seek(0)
     return send_file(io.BytesIO(output.getvalue().encode()), mimetype='text/csv', as_attachment=True, download_name='playlist.csv')
 
@@ -161,50 +128,89 @@ def play_song_by_index(index):
         return jsonify({"success": True, "current": current_song_index})
     return jsonify({"success": False, "error": "Invalid index"}), 400
 
-@app.route('/api/stream/<video_id>')
-def stream_audio(video_id):
+@app.route('/static/mp3/<filename>')
+def serve_mp3(filename):
+    return send_from_directory(MP3_FOLDER, filename)
+
+@app.route('/api/search')
+def search_youtube():
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify({'error': 'No query provided'}), 400
     ydl_opts = {
-        'format': 'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best',
         'quiet': True,
-        'noplaylist': True,
-        'default_search': 'ytsearch1',
-        'extract_flat': False,
-        'forceurl': True,
-        'forcejson': True,
         'skip_download': True,
-        'nocheckcertificate': True,
-        'source_address': '0.0.0.0',
+        'extract_flat': True,
+        'default_search': 'ytsearch5',
+        'forcejson': True,
     }
-    url = f'https://www.youtube.com/watch?v={video_id}'
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            stream_url = info.get('url', None)
-            if not stream_url:
-                print(f"[ERROR] No stream URL found for video_id {video_id}")
-                return jsonify({'error': 'No stream URL found'}), 404
-            def generate():
-                with requests.get(stream_url, stream=True) as r:
-                    r.raise_for_status()
-                    for chunk in r.iter_content(chunk_size=4096):
-                        if chunk:
-                            yield chunk
-            mimetype = 'audio/mp4' if stream_url.endswith('.m4a') else 'audio/mpeg'
-            print(f"[API] Streaming {stream_url} as {mimetype}")
-            return Response(generate(), mimetype=mimetype)
+            info = ydl.extract_info(query, download=False) or {}
+            entries = info.get('entries', []) if isinstance(info, dict) else []
+            results = []
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    entry = dict()
+                results.append({
+                    'title': entry.get('title', ''),
+                    'artist': entry.get('uploader', ''),
+                    'video_id': entry.get('id', ''),
+                    'thumbnail': entry.get('thumbnail', ''),
+                })
+            return jsonify({'results': results})
     except Exception as e:
-        print(f"[ERROR] Streaming failed for video_id {video_id}: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/stream/test')
-def stream_test():
-    def generate():
-        with requests.get('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', stream=True) as r:
-            r.raise_for_status()
-            for chunk in r.iter_content(chunk_size=4096):
-                if chunk:
-                    yield chunk
-    return Response(generate(), mimetype='audio/mpeg')
+@app.route('/api/download_and_add', methods=['POST'])
+def download_and_add():
+    global current_song_index
+    data = request.json
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': 'Invalid data format'}), 400
+    video_id = data.get('video_id')
+    title = data.get('title', 'Unknown')
+    artist = data.get('artist', 'Unknown')
+    albumArt = data.get('albumArt', '')
+    requested_by = data.get('requested_by', 'WebApp')
+    duration = data.get('duration', '')
+    if not video_id:
+        return jsonify({'success': False, 'error': 'No video_id provided'}), 400
+    mp3_filename = f"{video_id}.mp3"
+    mp3_path = os.path.join('static', 'mp3', mp3_filename)
+    # Download if not already present
+    if not os.path.exists(mp3_path):
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': mp3_path,
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'quiet': True,
+        }
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([f'https://www.youtube.com/watch?v={video_id}'])
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Failed to download: {e}'}), 500
+    # Add to queue if not already present
+    if any(isinstance(item, dict) and item.get('video_id') == video_id for item in music_queue):
+        return jsonify({'success': False, 'message': 'Song already in queue', 'queue': music_queue, 'current': current_song_index})
+    song = {
+        'title': title,
+        'artist': artist,
+        'video_id': video_id,
+        'albumArt': albumArt,
+        'src': mp3_filename,
+        'duration': duration,
+        'requested_by': requested_by
+    }
+    music_queue.append(song)
+    current_song_index = len(music_queue) - 1
+    save_queue()
+    return jsonify({'success': True, 'queue': music_queue, 'current': current_song_index})
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True) 
