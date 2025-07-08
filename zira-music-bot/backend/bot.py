@@ -91,7 +91,7 @@ def send_admin_report(app):
 
 # --- Configuration ---
 # Define the correct API URL and paths relative to the project root
-API_URL = "http://localhost:5000/api"
+API_URL = "http://localhost:8080/api"
 # IMPORTANT: This should be your ngrok/production URL for the Mini App to work on mobile
 # For local testing, you can use a file path, but it may not work on all Telegram clients.
 # Replace this with your actual URL when deploying.

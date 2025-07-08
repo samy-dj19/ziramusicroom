@@ -6,6 +6,7 @@
     <title>Zira Music Room</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="assets/images/default_album_art.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             min-height: 100vh;
@@ -197,93 +198,191 @@
     </style>
 </head>
 <body>
-    <div class="music-room-container">
-        <header>
-            <div class="header-top">
-                <div class="header-actions-group">
-                    <button id="themeToggle" title="Toggle Dark/Light Mode" aria-label="Toggle theme">🌙</button>
-                    <button id="menuBtn" title="Menu" aria-label="Menu">
-                        <svg width="28" height="28" viewBox="0 0 32 32" class="icon-svg"><circle cx="16" cy="8" r="2.2"/><circle cx="16" cy="16" r="2.2"/><circle cx="16" cy="24" r="2.2"/></svg>
+    <div class="music-room smart-theme">
+        <div class="animated-bg">
+            <!-- Animated SVG music notes -->
+            <svg class="bg-notes" width="100%" height="100%" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g class="note-group">
+                    <path d="M60 100 Q70 80 80 100 T100 100" stroke="#a78bfa" stroke-width="3" fill="none"/>
+                    <circle cx="70" cy="80" r="7" fill="#a78bfa"/>
+                </g>
+                <g class="note-group">
+                    <path d="M200 200 Q210 180 220 200 T240 200" stroke="#f472b6" stroke-width="3" fill="none"/>
+                    <circle cx="210" cy="180" r="7" fill="#f472b6"/>
+                </g>
+                <g class="note-group">
+                    <path d="M600 400 Q610 380 620 400 T640 400" stroke="#7c3aed" stroke-width="3" fill="none"/>
+                    <circle cx="610" cy="380" r="7" fill="#7c3aed"/>
+                </g>
+                <!-- More animated notes -->
+                <g class="note-group">
+                    <path d="M400 120 Q410 100 420 120 T440 120" stroke="#fbbf24" stroke-width="3" fill="none"/>
+                    <circle cx="410" cy="100" r="7" fill="#fbbf24"/>
+                </g>
+                <g class="note-group">
+                    <path d="M700 200 Q710 180 720 200 T740 200" stroke="#34d399" stroke-width="3" fill="none"/>
+                    <circle cx="710" cy="180" r="7" fill="#34d399"/>
+                </g>
+                <!-- Animated wave -->
+                <g class="note-group wave">
+                    <path d="M0 550 Q200 500 400 550 T800 550" stroke="#a78bfa" stroke-width="8" fill="none" opacity="0.18"/>
+                </g>
+            </svg>
+        </div>
+        <header class="music-header">
+            <div class="header-row">
+                <h1 class="app-title">Zira Music Room</h1>
+                <div class="header-actions">
+                    <button id="favBtn" class="icon-btn fav-btn" aria-label="Show Favorites">
+                        <!-- Heart SVG -->
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.04 3 12.5 4 13 5.09C13.5 4 14.96 3 16.5 3C19.5 3 22 5.5 22 8.5C22 13.5 12 21 12 21Z"/></svg>
                     </button>
-                </div>
-                <div class="dropdown-menu" id="dropdownMenu">
-                    <button id="showFavBtn">❤️ Favorites</button>
-                    <button id="showHistoryBtn">🕑 History</button>
-                    <button id="shareMenuBtn">🔗 Share Room</button>
+                    <button id="themeToggle" class="theme-toggle" aria-label="Toggle Night/Day Theme">
+                        <!-- Moon SVG -->
+                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
+                    </button>
+                    <select id="themePicker" class="theme-picker" aria-label="Theme Picker">
+                        <option value="violet">Violet</option>
+                        <option value="blue">Blue</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="green">Green</option>
+                    </select>
                 </div>
             </div>
-            <h1>Zira Music Room</h1>
-            <p class="subtitle">Listen, share, and vibe together!</p>
-            <button id="shareRoomBtn" title="Share Room" style="display:none;">🔗</button>
+            <div class="header-row">
+                <button id="shareRoomBtn" class="share-btn" aria-label="Share Room Link">
+                    <!-- Link SVG -->
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.07 0l3.54-3.54a5 5 0 00-7.07-7.07l-1.41 1.41"/><path d="M14 11a5 5 0 01-7.07 0l-3.54-3.54a5 5 0 017.07-7.07l1.41 1.41"/></svg>
+                    Share Room
+                </button>
+            </div>
         </header>
-        <main>
-            <div class="search-bar-container">
-                <input type="text" id="searchInput" placeholder="Search songs or artists..." aria-label="Search songs or artists" />
-                <button id="searchBtn" title="Search" aria-label="Search">🔍</button>
+        <main class="centered-main">
+            <div class="main-box glassy">
+                <div class="profile-section">
+                    <img src="assets/images/default_album_art.png" alt="User Avatar" class="profile-avatar" />
+                    <span class="profile-greeting">Welcome, Music Lover!</span>
+                </div>
+                <section class="search-section">
+                    <form id="searchForm" autocomplete="off">
+                        <input type="text" id="searchInput" placeholder="Search for songs or artists..." aria-label="Search songs or artists">
+                        <button type="submit" id="searchBtn" aria-label="Search">
+                            <!-- Search SVG -->
+                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </button>
+                    </form>
+                    <ul id="searchResults" class="search-results" style="display:none;"></ul>
+                </section>
+                <section class="player-section">
+                    <div class="album-art-large glowing-album-art premium-glow">
+                        <img id="albumArt" src="assets/images/default_album_art.png" alt="Album Art" />
+                        <div class="visualizer">
+                            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                        </div>
+                    </div>
+                    <div class="song-info">
+                        <h2 id="songTitle" class="now-playing-glow">No song playing</h2>
+                        <p id="songArtist"></p>
+                        <span id="songDuration">0:00</span>
+                        <div id="songRequestedBy" class="song-requested-by"></div>
+                    </div>
+                    <div class="progress-container">
+                        <span id="currentTime">0:00</span>
+                        <input type="range" id="progressBar" value="0" min="0" max="100" aria-label="Seek">
+                        <span id="totalTime">0:00</span>
+                    </div>
+                    <div class="controls">
+                        <button id="prevBtn" aria-label="Previous song" class="icon-btn">
+                            <!-- Prev SVG -->
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                        </button>
+                        <button id="playPauseBtn" aria-label="Play/Pause" class="icon-btn play-main">
+                            <!-- Play SVG -->
+                            <span id="playIcon">
+                                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            </span>
+                            <span id="pauseIcon" style="display:none;">
+                                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                            </span>
+                        </button>
+                        <button id="nextBtn" aria-label="Next song" class="icon-btn">
+                            <!-- Next SVG -->
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                        </button>
+                        <button id="loopBtn" aria-label="Loop" class="icon-btn">
+                            <!-- Loop SVG -->
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.13-3.36L23 10"/><path d="M20.49 15A9 9 0 015.87 18.36L1 14"/></svg>
+                        </button>
+                    </div>
+                    <audio id="audioPlayer" preload="auto"></audio>
+                </section>
+                <section class="queue-section">
+                    <div class="queue-header-row">
+                        <h3>Music Queue</h3>
+                    </div>
+                    <ul id="queueList" class="music-queue">
+                        <!-- Songs will be dynamically added here -->
+                        <li class="queue-item">
+                            <div class="queue-song-info">
+                                <span class="queue-song-title">
+                                    <!-- Music SVG -->
+                                    <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                                    Song Title
+                                </span>
+                                <span class="queue-song-artist">Artist</span>
+                            </div>
+                            <div class="queue-controls">
+                                <button class="queue-play icon-btn" aria-label="Play">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                </button>
+                                <button class="queue-pause icon-btn" aria-label="Pause">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                                </button>
+                                <button class="queue-next icon-btn" aria-label="Next">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                                </button>
+                                <button class="queue-share icon-btn" aria-label="Share Song">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 12v-2a4 4 0 014-4h12"/><path d="M16 16l4-4-4-4"/></svg>
+                                </button>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
             </div>
-            <div id="searchResults" class="search-results-dropdown" style="display:none;"></div>
-            <section class="now-playing">
-                <div class="album-art-large" id="albumArtLarge">
-                    <img id="albumArt" src="assets/images/default_album_art.png" alt="Album Art" class="album-art" />
-                    <div id="audioLoadingSpinner" class="audio-loading-spinner" style="display:none;"></div>
+            <!-- Chat UI -->
+            <div class="chat-box glassy">
+                <div class="chat-header">
+                    <span>Room Chat</span>
+                    <div class="chat-reactions">
+                        <button class="reaction-btn" data-reaction="👍" title="Like">👍</button>
+                        <button class="reaction-btn" data-reaction="🔥" title="Fire">🔥</button>
+                        <button class="reaction-btn" data-reaction="😂" title="LOL">😂</button>
+                        <button class="reaction-btn" data-reaction="🎵" title="Music">🎵</button>
+                    </div>
                 </div>
-                <div class="song-info">
-                    <h2 id="songTitle">No song playing</h2>
-                    <p id="songArtist"></p>
-                    <span id="songDuration">0:00</span>
-                    <div id="songRequestedBy" class="song-requested-by"></div>
-                </div>
-                <div class="progress-container">
-                    <span id="currentTime">0:00</span>
-                    <input type="range" id="progressBar" value="0" min="0" max="100" aria-label="Seek">
-                    <span id="totalTime">0:00</span>
-                </div>
-                <div class="controls" role="group" aria-label="Player controls">
-                    <button id="prevBtn" aria-label="Previous song">⏮️</button>
-                    <button id="playPauseBtn" aria-label="Play/Pause">
-                        <span id="playIcon">▶️</span>
-                        <span id="pauseIcon" style="display:none;">⏸️</span>
-                    </button>
-                    <button id="nextBtn" aria-label="Next song">⏭️</button>
-                    <button id="loopBtn" aria-label="Loop">🔁</button>
-                </div>
-                <audio id="audioPlayer" preload="auto"></audio>
-            </section>
-            <button id="openWebPlayerBtn" style="margin: 16px 0; font-size: 1.1em; width: 100%; background: #5e60ce; color: #fff; border: none; border-radius: 8px; padding: 12px 0; cursor: pointer;">🎵 Open Full Music Player</button>
-            <section class="queue-section">
-                <h3>Up Next</h3>
-                <ul id="queueList" aria-label="Song queue"></ul>
-            </section>
-            <form id="addSongForm" class="add-song-form">
-                <input type="text" id="songTitleInput" placeholder="Song Title" required />
-                <input type="text" id="songArtistInput" placeholder="Artist" required />
-                <input type="text" id="songSrcInput" placeholder="Audio URL (optional)" />
-                <button type="submit">Add Song</button>
-            </form>
-            <section class="history-section">
-                <h2>History</h2>
-                <div class="history-controls">
-                    <input type="text" id="userIdInput" placeholder="User ID (for demo)" />
-                    <button id="clearHistoryBtn">Clear History</button>
-                </div>
-                <ul id="historyList">
-                    <li>No songs played yet</li>
-                </ul>
-            </section>
-            <section class="export-section">
-                <button id="exportPlaylistBtn">Export Playlist (CSV)</button>
-            </section>
+                <div id="chatLog" class="chat-log"></div>
+                <form id="chatForm" class="chat-form" autocomplete="off">
+                    <input id="chatInput" class="chat-input" type="text" placeholder="Type a message..." maxlength="200" />
+                    <button type="submit" class="chat-send-btn">Send</button>
+                </form>
+            </div>
         </main>
-        <footer>
-            <p>Made with <span style="color: #e25555;">&#9829;</span> by Zira</p>
-        </footer>
+        <div id="favModal" class="fav-modal" style="display:none;">
+            <div class="fav-modal-content glassy">
+                <button id="closeFavModal" class="icon-btn close-fav-btn" aria-label="Close Favorites">&times;</button>
+                <h2>Your Favorites</h2>
+                <ul id="favList" class="fav-list">
+                    <li class="fav-item">
+                        <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        Example Favorite Song
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="script.js"></script>
     <div class="share-notification" id="shareNotification">Room link copied!</div>
-    <audio id="clickSound" src="https://cdn.pixabay.com/audio/2022/07/26/audio_124bfae2b2.mp3" preload="auto" style="display:none;"></audio>
     <div id="toast" class="toast"></div>
-    <div class="centered">
-        <button id="joinRoomBtn" class="animated-btn">✨ Join Music ✨</button>
-    </div>
 </body>
 </html>

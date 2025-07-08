@@ -5,6 +5,7 @@ import yt_dlp
 import requests
 import json
 import os
+from flask_socketio import SocketIO, emit
 
 # Define absolute paths for project root, queue file, and MP3 folder
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -13,11 +14,15 @@ MP3_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'mp3')
 
 app = Flask(__name__)
 CORS(app, origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 # In-memory queue and state
 music_queue = []  # Initialize as empty, will be loaded from file
 current_song_index = 0
 is_paused = False
+
+# --- Real-Time Chat & Reactions ---
+chat_history = []  # Store recent chat messages (max 50)
 
 def save_queue():
     # Ensure the directory exists
@@ -34,6 +39,13 @@ def load_queue():
 
 # Load queue on startup
 load_queue()
+
+def broadcast_queue_update():
+    socketio.emit('queue_update', {
+        "queue": music_queue,
+        "current": current_song_index,
+        "is_paused": is_paused
+    })
 
 @app.route('/api/queue', methods=['GET'])
 def get_queue():
@@ -59,6 +71,7 @@ def add_song():
     })
     current_song_index = len(music_queue) - 1  # Always set to the newly added song
     save_queue()
+    broadcast_queue_update()  # Real-time update
     print(f"[API] Current song index set to {current_song_index}")
     return jsonify({"success": True, "queue": music_queue, "current": current_song_index})
 
@@ -67,6 +80,7 @@ def next_song():
     global current_song_index
     if music_queue:
         current_song_index = (current_song_index + 1) % len(music_queue)
+    broadcast_queue_update()  # Real-time update
     return jsonify({"current": current_song_index})
 
 @app.route('/api/prev', methods=['POST'])
@@ -74,18 +88,21 @@ def prev_song():
     global current_song_index
     if music_queue:
         current_song_index = (current_song_index - 1 + len(music_queue)) % len(music_queue)
+    broadcast_queue_update()  # Real-time update
     return jsonify({"current": current_song_index})
 
 @app.route('/api/pause', methods=['POST'])
 def pause():
     global is_paused
     is_paused = True
+    broadcast_queue_update()  # Real-time update
     return jsonify({"is_paused": is_paused})
 
 @app.route('/api/resume', methods=['POST'])
 def resume():
     global is_paused
     is_paused = False
+    broadcast_queue_update()  # Real-time update
     return jsonify({"is_paused": is_paused})
 
 @app.route('/api/skip', methods=['POST'])
@@ -94,6 +111,7 @@ def skip():
     global current_song_index
     if music_queue:
         current_song_index = (current_song_index + 1) % len(music_queue)
+    broadcast_queue_update()  # Real-time update
     return jsonify({"current": current_song_index})
 
 @app.route('/api/playlist', methods=['GET'])
@@ -108,6 +126,7 @@ def end():
     current_song_index = 0
     is_paused = False
     save_queue()
+    broadcast_queue_update()  # Real-time update
     return jsonify({"queue": music_queue, "current": current_song_index, "is_paused": is_paused})
 
 @app.route('/api/playlist/export', methods=['GET'])
@@ -125,6 +144,7 @@ def play_song_by_index(index):
     global current_song_index
     if 0 <= index < len(music_queue):
         current_song_index = index
+        broadcast_queue_update()  # Real-time update
         return jsonify({"success": True, "current": current_song_index})
     return jsonify({"success": False, "error": "Invalid index"}), 400
 
@@ -210,7 +230,31 @@ def download_and_add():
     music_queue.append(song)
     current_song_index = len(music_queue) - 1
     save_queue()
+    broadcast_queue_update()  # Real-time update
     return jsonify({'success': True, 'queue': music_queue, 'current': current_song_index})
 
+# --- SocketIO Events ---
+@socketio.on('chat_message')
+def handle_chat_message(data):
+    # data: {"user": str, "message": str, "timestamp": str}
+    chat_history.append(data)
+    if len(chat_history) > 50:
+        chat_history.pop(0)
+    socketio.emit('chat_message', data)
+
+@socketio.on('reaction')
+def handle_reaction(data):
+    # data: {"user": str, "reaction": str, "song_id": str, "timestamp": str}
+    socketio.emit('reaction', data)
+
+@socketio.on('connect')
+def handle_connect():
+    emit('queue_update', {
+        "queue": music_queue,
+        "current": current_song_index,
+        "is_paused": is_paused
+    })
+    emit('chat_history', chat_history)
+
 if __name__ == '__main__':
-    app.run(port=5000, debug=True) 
+    socketio.run(app, host="0.0.0.0", port=8080) 
