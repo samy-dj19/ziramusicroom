@@ -4,385 +4,97 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zira Music Room</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="assets/images/default_album_art.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #23235c 0%, #5e60ce 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-        }
-        .music-room-container {
-            max-width: 420px;
-            width: 100%;
-            margin: 32px auto;
-            background: rgba(40, 40, 80, 0.92);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px rgba(40, 40, 80, 0.18);
-            padding: 0 0 32px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        header {
-            width: 100%;
-            padding: 32px 0 0 0;
-            text-align: center;
-        }
-        .header-top {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 0 24px;
-        }
-        .header-actions button {
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 1.3rem;
-            margin-left: 8px;
-            cursor: pointer;
-        }
-        h1 {
-            font-size: 2.1rem;
-            margin: 12px 0 0 0;
-            color: #fff;
-            letter-spacing: 1px;
-        }
-        .subtitle {
-            color: #b3b3e6;
-            font-size: 1.1rem;
-            margin-bottom: 18px;
-        }
-        .search-bar-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 18px 0 0 0;
-            width: 90%;
-        }
-        #searchInput {
-            flex: 1;
-            padding: 10px 14px;
-            border-radius: 8px 0 0 8px;
-            border: none;
-            font-size: 1rem;
-            outline: none;
-        }
-        #searchBtn {
-            padding: 10px 16px;
-            border-radius: 0 8px 8px 0;
-            border: none;
-            background: #5e60ce;
-            color: #fff;
-            cursor: pointer;
-        }
-        .demo-song-container {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin: 18px 0 0 0;
-        }
-        #addDemoSongBtn {
-            padding: 10px 24px;
-            font-size: 1rem;
-            border-radius: 8px;
-            background: #5e60ce;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        #addDemoSongBtn:hover {
-            background: #23235c;
-        }
-        .player {
-            background: rgba(30, 30, 60, 0.95);
-            border-radius: 18px;
-            box-shadow: 0 4px 16px rgba(40, 40, 80, 0.10);
-            padding: 24px 18px 18px 18px;
-            margin: 24px 0 0 0;
-            width: 92%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .album-art-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 18px;
-            box-shadow: 0 2px 8px rgba(40, 40, 80, 0.10);
-        }
-        .album-art-large img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .song-info {
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        #songTitle {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #fff;
-        }
-        #songArtist {
-            color: #b3b3e6;
-            font-size: 1rem;
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 18px;
-            margin-top: 18px;
-        }
-        .controls button {
-            background: #23235c;
-            border: none;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-        }
-        .controls button:active, .controls button:focus {
-            background: #5e60ce;
-            color: #fff;
-        }
-        .progress-bar-container {
-            width: 100%;
-            margin: 12px 0 0 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .progress-bar-bg {
-            flex: 1;
-            background: #23235c;
-            border-radius: 6px;
-            height: 6px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            background: #5e60ce;
-            height: 100%;
-            width: 0%;
-            border-radius: 6px;
-            transition: width 0.2s;
-        }
-        @media (max-width: 500px) {
-            .music-room-container {
-                max-width: 98vw;
-                border-radius: 0;
-                margin: 0;
-            }
-            .player {
-                width: 98vw;
-                border-radius: 0;
-            }
-        }
-    </style>
 </head>
 <body>
-    <div class="music-room smart-theme">
-        <div class="animated-bg">
-            <!-- Animated SVG music notes -->
-            <svg class="bg-notes" width="100%" height="100%" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g class="note-group">
-                    <path d="M60 100 Q70 80 80 100 T100 100" stroke="#a78bfa" stroke-width="3" fill="none"/>
-                    <circle cx="70" cy="80" r="7" fill="#a78bfa"/>
-                </g>
-                <g class="note-group">
-                    <path d="M200 200 Q210 180 220 200 T240 200" stroke="#f472b6" stroke-width="3" fill="none"/>
-                    <circle cx="210" cy="180" r="7" fill="#f472b6"/>
-                </g>
-                <g class="note-group">
-                    <path d="M600 400 Q610 380 620 400 T640 400" stroke="#7c3aed" stroke-width="3" fill="none"/>
-                    <circle cx="610" cy="380" r="7" fill="#7c3aed"/>
-                </g>
-                <!-- More animated notes -->
-                <g class="note-group">
-                    <path d="M400 120 Q410 100 420 120 T440 120" stroke="#fbbf24" stroke-width="3" fill="none"/>
-                    <circle cx="410" cy="100" r="7" fill="#fbbf24"/>
-                </g>
-                <g class="note-group">
-                    <path d="M700 200 Q710 180 720 200 T740 200" stroke="#34d399" stroke-width="3" fill="none"/>
-                    <circle cx="710" cy="180" r="7" fill="#34d399"/>
-                </g>
-                <!-- Animated wave -->
-                <g class="note-group wave">
-                    <path d="M0 550 Q200 500 400 550 T800 550" stroke="#a78bfa" stroke-width="8" fill="none" opacity="0.18"/>
-                </g>
-            </svg>
+    <div class="animated-gradient-bg"></div>
+    <div class="moving-gradient-bar"></div>
+    <div class="moving-gradient-bar bar2"></div>
+    <div class="floating-svg-note">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#f472b6" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 10V28a6 6 0 1 1-2-4.47V10z" fill="#f472b6"/>
+            <circle cx="28" cy="32" r="4" fill="#fff" opacity="0.5"/>
+        </svg>
+    </div>
+    <div class="floating-svg-star">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#a78bfa" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="18,3 22,14 34,14 24,21 28,33 18,26 8,33 12,21 2,14 14,14" fill="#a78bfa"/>
+        </svg>
+    </div>
+    <div class="floating-shapes"></div>
+    <canvas id="three-bg"></canvas>
+    <div class="zira-music-room-container">
+        <div class="zira-music-room-header">
+            <img src="assets/images/default_album_art.png" alt="Zira Music Room Logo" class="zira-music-room-logo" />
+            <h1 class="zira-music-room-title">Zira Music Room</h1>
+            <p class="zira-music-room-desc">A beautiful, immersive, and modern music experience.</p>
         </div>
-        <header class="music-header">
-            <div class="header-row">
-                <h1 class="app-title">Zira Music Room</h1>
-                <div class="header-actions">
-                    <button id="favBtn" class="icon-btn fav-btn" aria-label="Show Favorites">
-                        <!-- Heart SVG -->
-                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 21C12 21 4 13.5 4 8.5C4 5.5 6.5 3 9.5 3C11.04 3 12.5 4 13 5.09C13.5 4 14.96 3 16.5 3C19.5 3 22 5.5 22 8.5C22 13.5 12 21 12 21Z"/></svg>
-                    </button>
-                    <button id="themeToggle" class="theme-toggle" aria-label="Toggle Night/Day Theme">
-                        <!-- Moon SVG -->
-                        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>
-                    </button>
-                    <select id="themePicker" class="theme-picker" aria-label="Theme Picker">
-                        <option value="violet">Violet</option>
-                        <option value="blue">Blue</option>
-                        <option value="sunset">Sunset</option>
-                        <option value="green">Green</option>
-                    </select>
-                </div>
+        <div class="search-bar-container">
+            <input type="text" id="search-bar" class="search-bar" placeholder="Search for songs, artists, albums..." />
+            <button class="search-icon-btn" title="Search">
+                <svg width="22" height="22" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+        </div>
+        <div class="zira-music-player">
+            <div class="album-art-container">
+                <img id="album-art" src="assets/images/default_album_art.png" alt="Album Art" class="album-art" />
             </div>
-            <div class="header-row">
-                <button id="shareRoomBtn" class="share-btn" aria-label="Share Room Link">
-                    <!-- Link SVG -->
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.07 0l3.54-3.54a5 5 0 00-7.07-7.07l-1.41 1.41"/><path d="M14 11a5 5 0 01-7.07 0l-3.54-3.54a5 5 0 017.07-7.07l1.41 1.41"/></svg>
-                    Share Room
+            <div class="track-info">
+                <span id="track-title" class="track-title">Track Title</span>
+                <span id="track-artist" class="track-artist">Artist Name</span>
+            </div>
+            <div class="progress-bar-container">
+                <span id="current-time" class="progress-time">0:00</span>
+                <div class="progress-bar" id="progress-bar">
+                    <div class="progress-bar-inner" id="progress-bar-inner" style="width: 20%;"></div>
+                </div>
+                <span id="duration" class="progress-time">3:45</span>
+            </div>
+            <div class="music-controls">
+                <button id="prev-btn" class="music-btn" title="Previous">
+                    <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="19 20 9 12 19 4 19 20"/>
+                        <rect x="5" y="4" width="4" height="16"/>
+                    </svg>
                 </button>
+                <button id="play-pause-btn" class="music-btn play-pause" title="Play/Pause">
+                    <svg id="play-pause-icon" width="28" height="28" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                </button>
+                <button id="next-btn" class="music-btn" title="Next">
+                    <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="5 4 15 12 5 20 5 4"/>
+                        <rect x="15" y="4" width="4" height="16"/>
+                    </svg>
+                </button>
+                <button id="loop-btn" class="music-btn" title="Loop">
+                    <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="17 1 21 5 17 9"/>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                        <polyline points="7 23 3 19 7 15"/>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                </button>
+                <input id="volume-slider" type="range" min="0" max="100" value="50" class="volume-slider" />
             </div>
-        </header>
-        <main class="centered-main">
-            <div class="main-box glassy">
-                <div class="profile-section">
-                    <img src="assets/images/default_album_art.png" alt="User Avatar" class="profile-avatar" />
-                    <span class="profile-greeting">Welcome, Music Lover!</span>
-                </div>
-                <section class="search-section">
-                    <form id="searchForm" autocomplete="off">
-                        <input type="text" id="searchInput" placeholder="Search for songs or artists..." aria-label="Search songs or artists">
-                        <button type="submit" id="searchBtn" aria-label="Search">
-                            <!-- Search SVG -->
-                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        </button>
-                    </form>
-                    <ul id="searchResults" class="search-results" style="display:none;"></ul>
-                </section>
-                <section class="player-section">
-                    <div class="album-art-large glowing-album-art premium-glow">
-                        <img id="albumArt" src="assets/images/default_album_art.png" alt="Album Art" />
-                        <div class="visualizer">
-                            <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
-                        </div>
-                    </div>
-                    <div class="song-info">
-                        <h2 id="songTitle" class="now-playing-glow">No song playing</h2>
-                        <p id="songArtist"></p>
-                        <span id="songDuration">0:00</span>
-                        <div id="songRequestedBy" class="song-requested-by"></div>
-                    </div>
-                    <div class="progress-container">
-                        <span id="currentTime">0:00</span>
-                        <input type="range" id="progressBar" value="0" min="0" max="100" aria-label="Seek">
-                        <span id="totalTime">0:00</span>
-                    </div>
-                    <div class="controls">
-                        <button id="prevBtn" aria-label="Previous song" class="icon-btn">
-                            <!-- Prev SVG -->
-                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
-                        </button>
-                        <button id="playPauseBtn" aria-label="Play/Pause" class="icon-btn play-main">
-                            <!-- Play SVG -->
-                            <span id="playIcon">
-                                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                            </span>
-                            <span id="pauseIcon" style="display:none;">
-                                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                            </span>
-                        </button>
-                        <button id="nextBtn" aria-label="Next song" class="icon-btn">
-                            <!-- Next SVG -->
-                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-                        </button>
-                        <button id="loopBtn" aria-label="Loop" class="icon-btn">
-                            <!-- Loop SVG -->
-                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.13-3.36L23 10"/><path d="M20.49 15A9 9 0 015.87 18.36L1 14"/></svg>
-                        </button>
-                    </div>
-                    <audio id="audioPlayer" preload="auto"></audio>
-                </section>
-                <section class="queue-section">
-                    <div class="queue-header-row">
-                        <h3>Music Queue</h3>
-                    </div>
-                    <ul id="queueList" class="music-queue">
-                        <!-- Songs will be dynamically added here -->
-                        <li class="queue-item">
-                            <div class="queue-song-info">
-                                <span class="queue-song-title">
-                                    <!-- Music SVG -->
-                                    <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                                    Song Title
-                                </span>
-                                <span class="queue-song-artist">Artist</span>
-                            </div>
-                            <div class="queue-controls">
-                                <button class="queue-play icon-btn" aria-label="Play">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                </button>
-                                <button class="queue-pause icon-btn" aria-label="Pause">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-                                </button>
-                                <button class="queue-next icon-btn" aria-label="Next">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
-                                </button>
-                                <button class="queue-share icon-btn" aria-label="Share Song">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 12v-2a4 4 0 014-4h12"/><path d="M16 16l4-4-4-4"/></svg>
-                                </button>
-                            </div>
-                        </li>
-                    </ul>
-                </section>
-            </div>
-            <!-- Chat UI -->
-            <div class="chat-box glassy">
-                <div class="chat-header">
-                    <span>Room Chat</span>
-                    <div class="chat-reactions">
-                        <button class="reaction-btn" data-reaction="👍" title="Like">👍</button>
-                        <button class="reaction-btn" data-reaction="🔥" title="Fire">🔥</button>
-                        <button class="reaction-btn" data-reaction="😂" title="LOL">😂</button>
-                        <button class="reaction-btn" data-reaction="🎵" title="Music">🎵</button>
-                    </div>
-                </div>
-                <div id="chatLog" class="chat-log"></div>
-                <form id="chatForm" class="chat-form" autocomplete="off">
-                    <input id="chatInput" class="chat-input" type="text" placeholder="Type a message..." maxlength="200" />
-                    <button type="submit" class="chat-send-btn">Send</button>
-                </form>
-            </div>
-        </main>
-        <div id="favModal" class="fav-modal" style="display:none;">
-            <div class="fav-modal-content glassy">
-                <button id="closeFavModal" class="icon-btn close-fav-btn" aria-label="Close Favorites">&times;</button>
-                <h2>Your Favorites</h2>
-                <ul id="favList" class="fav-list">
-                    <li class="fav-item">
-                        <svg width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                        Example Favorite Song
-                    </li>
+            <div class="playlist-container">
+                <h3>Up Next</h3>
+                <ul id="playlist" class="playlist">
+                    <li class="playlist-item active"><span>Track 1</span></li>
+                    <li class="playlist-item"><span>Track 2</span></li>
+                    <li class="playlist-item"><span>Track 3</span></li>
                 </ul>
             </div>
         </div>
     </div>
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="script.js"></script>
-    <div class="share-notification" id="shareNotification">Room link copied!</div>
     <div id="toast" class="toast"></div>
 </body>
 </html>
