@@ -1,3 +1,31 @@
+# Deploying to GitHub Pages
+
+This project is ready to deploy as a static site to GitHub Pages at:
+[https://samy-dj19.github.io/ziramusicroom/](https://samy-dj19.github.io/ziramusicroom/)
+
+## 🚀 Quick Deploy Steps
+
+1. **Install dependencies (if not already):**
+   ```sh
+   npm install
+   ```
+2. **Deploy to GitHub Pages:**
+   ```sh
+   npm run deploy
+   ```
+   This will:
+   - Build the app for production
+   - Copy `index.html` to `404.html` (for SPA routing)
+   - Publish the `build` folder to the `gh-pages` branch
+
+3. **Wait a minute and visit:**
+   [https://samy-dj19.github.io/ziramusicroom/](https://samy-dj19.github.io/ziramusicroom/)
+
+## ⚠️ SPA 404 Fix
+GitHub Pages only serves `index.html` for the root. The deploy script copies `index.html` to `404.html` so that client-side routing works (refreshing on any route will load your app, not a 404 page).
+
+---
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
@@ -28,6 +56,10 @@ The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+
+### `npm run deploy`
+
+Builds and deploys the app to GitHub Pages, including the SPA 404 fix.
 
 ### `npm run eject`
 

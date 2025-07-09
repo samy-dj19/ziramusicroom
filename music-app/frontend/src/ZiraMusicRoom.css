@@ -1,0 +1,220 @@
+body, html {
+  min-height: 100vh;
+  margin: 0;
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #3a1c71 0%, #d76d77 50%, #ffaf7b 100%);
+  overflow-x: hidden;
+}
+
+.zira-bg {
+  min-height: 100vh;
+  width: 100vw;
+  background: linear-gradient(135deg, #3a1c71 0%, #d76d77 50%, #ffaf7b 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+.zira-center-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  margin: 40px auto;
+  padding: 32px 24px;
+  max-width: 400px;
+  z-index: 1;
+  position: relative;
+  text-align: center;
+}
+
+.zira-logo {
+  width: 120px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.zira-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #ffaf7b;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.zira-desc {
+  color: #fff;
+  margin-bottom: 24px;
+  font-size: 1.1rem;
+}
+
+.zira-search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 6px 10px;
+  margin-bottom: 24px;
+}
+
+.zira-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  padding: 8px;
+}
+
+.zira-search-btn {
+  background: #ffaf7b;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.2rem;
+  padding: 8px 14px;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.2s;
+}
+
+.zira-search-btn:hover {
+  background: #d76d77;
+}
+
+.zira-player-card {
+  background: rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.zira-album-art {
+  width: 100px;
+  height: 100px;
+  border-radius: 16px;
+  background: #fff;
+  margin: 0 auto 12px auto;
+  display: block;
+  object-fit: cover;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.zira-track-title {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.zira-track-artist {
+  color: #e0e0e0;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.zira-progress-bar {
+  width: 100%;
+  margin: 8px 0;
+  accent-color: #ffaf7b;
+}
+
+.zira-player-controls {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.zira-player-btn {
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  color: #ffaf7b;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.zira-player-btn:hover {
+  background: #ffaf7b;
+  color: #fff;
+}
+
+.zira-queue-section {
+  background: rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 12px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.zira-queue-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #ffaf7b;
+}
+
+.zira-queue-track {
+  background: rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+/* Animated notes */
+.zira-note {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.5;
+  pointer-events: none;
+  animation: floatNote 6s infinite linear;
+}
+
+.zira-note1 { left: 10%; top: 20%; animation-delay: 0s; color: #ffaf7b; }
+.zira-note2 { left: 80%; top: 30%; animation-delay: 2s; color: #fff; }
+.zira-note3 { left: 20%; top: 70%; animation-delay: 1s; color: #d76d77; }
+.zira-note4 { left: 70%; top: 80%; animation-delay: 3s; color: #fff; }
+
+@keyframes floatNote {
+  0% { transform: translateY(0) scale(1); opacity: 0.5; }
+  50% { transform: translateY(-40px) scale(1.2); opacity: 0.8; }
+  100% { transform: translateY(0) scale(1); opacity: 0.5; }
+}
+
+@media (max-width: 600px) {
+  .zira-center-card {
+    width: 98vw !important;
+    min-width: 0 !important;
+    padding: 8px !important;
+    font-size: 15px !important;
+  }
+  .zira-music-room button, .zira-music-room .MuiButton-root {
+    font-size: 15px !important;
+    padding: 8px 12px !important;
+  }
+  .zira-bg {
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+  .zira-music-room .MuiDialog-paper {
+    width: 95vw !important;
+    margin: 0 !important;
+  }
+  .zira-music-room .zira-chat-box {
+    max-height: 120px !important;
+    font-size: 13px !important;
+  }
+  .zira-music-room .zira-queue-list {
+    font-size: 14px !important;
+  }
+} 
