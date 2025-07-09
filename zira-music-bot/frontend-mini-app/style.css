@@ -1713,3 +1713,83 @@ svg {
 .stats-btn:hover {
   background: #7c3aed;
 }
+.ai-request-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 18px 0 10px 0;
+}
+#ai-request {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #a78bfa;
+  font-size: 1em;
+  width: 220px;
+}
+.ai-request-container button {
+  background: #a78bfa;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: 0;
+}
+.ai-request-container button + button {
+  margin-left: 8px;
+}
+.recommend-btn {
+  background: #a78bfa;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 10px;
+  transition: background 0.2s;
+}
+.recommend-btn:hover {
+  background: #7c3aed;
+}
+.ai-multi-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.ai-multi-list li {
+  padding: 10px 16px;
+  margin-bottom: 6px;
+  background: #ede9fe;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #4f46e5;
+  transition: background 0.2s;
+}
+.ai-multi-list li:hover {
+  background: #a78bfa;
+  color: #fff;
+}
+.inline-btn {
+  margin-left: 10px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #a78bfa;
+  color: #fff;
+  transition: background 0.2s;
+}
+.inline-btn.launch-btn:hover {
+  background: #4f46e5;
+}
+.inline-btn.close-btn {
+  background: #f87171;
+}
+.inline-btn.close-btn:hover {
+  background: #dc2626;
+}

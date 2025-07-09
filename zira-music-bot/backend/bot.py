@@ -1,6 +1,6 @@
 import logging
 import config  # Import the config file for BOT_TOKEN, ADMIN_GROUP_ID, ADMINS
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, CallbackContext, CallbackQueryHandler, ChatMemberHandler
 import requests
 import yt_dlp
@@ -151,10 +151,16 @@ async def stats(update: Update, context: CallbackContext) -> None:
 # --- Enhanced /play Command ---
 async def play(update: Update, context: CallbackContext) -> None:
     if not context.args:
-        await update.message.reply_text("Usage: /play <song name or artist - song>")
+        if hasattr(update, 'message') and update.message:
+            await update.message.reply_text("Usage: /play <song name or artist - song>")
         return
     song_query = " ".join(context.args)
-    searching_msg = await update.message.reply_text("⏳ Searching and downloading...")
+    if hasattr(update, 'message') and update.message:
+        searching_msg = await update.message.reply_text("⏳ Searching and downloading...")
+    elif hasattr(update, 'effective_chat') and update.effective_chat:
+        searching_msg = await update.effective_chat.send_message("⏳ Searching and downloading...")
+    else:
+        searching_msg = None
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': os.path.join(MP3_FOLDER, '%(id)s.%(ext)s'),
@@ -170,12 +176,21 @@ async def play(update: Update, context: CallbackContext) -> None:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info_list = ydl.extract_info(f"ytsearch5:{song_query}", download=False)['entries']
             if not info_list:
-                await searching_msg.edit_text(f"❌ No results for '{song_query}'.")
+                if searching_msg:
+                    await searching_msg.edit_text(f"❌ No results for '{song_query}'.")
                 return
-            # If multiple, show options
+            # If multiple, show options as inline buttons
             if len(info_list) > 1:
-                options = [f"{i+1}. {info['title']} - {info.get('uploader', 'Unknown')}" for i, info in enumerate(info_list)]
-                await searching_msg.edit_text("Multiple results found:\n" + "\n".join(options) + "\nReply with /play <number> to select.")
+                keyboard = [
+                    [InlineKeyboardButton(f"{i+1}. {info['title']} - {info.get('uploader', 'Unknown')}", callback_data=f"play_{info['id']}")]
+                    for i, info in enumerate(info_list)
+                ]
+                if searching_msg:
+                    await searching_msg.edit_text(
+                        "Multiple results found. Select one:",
+                        reply_markup=InlineKeyboardMarkup(keyboard)
+                    )
+                context.user_data['multi_results'] = {info['id']: info for info in info_list}
                 return
             info = info_list[0]
             # Download the selected song
@@ -184,7 +199,8 @@ async def play(update: Update, context: CallbackContext) -> None:
             filename = f"{video_id}.mp3"
             file_path = os.path.join(MP3_FOLDER, filename)
             if not os.path.exists(file_path):
-                await searching_msg.edit_text(f"❌ Download failed. Check ffmpeg is installed.")
+                if searching_msg:
+                    await searching_msg.edit_text(f"❌ Download failed. Check ffmpeg is installed.")
                 return
             title = info.get('title', "Unknown Title")
             artist = info.get('uploader', 'Unknown Artist')
@@ -193,7 +209,8 @@ async def play(update: Update, context: CallbackContext) -> None:
             duration_str = f"{int(duration // 60)}:{int(duration % 60):02d}" if duration else "N/A"
             src_filename = filename
     except Exception as e:
-        await searching_msg.edit_text(f"❌ Error: {e}")
+        if searching_msg:
+            await searching_msg.edit_text(f"❌ Error: {e}")
         logger.error(f"Error in /play: {e}", exc_info=True)
         return
     song_data = {
@@ -203,7 +220,7 @@ async def play(update: Update, context: CallbackContext) -> None:
         "src": src_filename,
         "albumArt": thumbnail,
         "duration": duration_str,
-        "requested_by": update.effective_user.first_name
+        "requested_by": update.effective_user.first_name if hasattr(update, 'effective_user') and update.effective_user and hasattr(update.effective_user, 'first_name') else "User"
     }
     try:
         response = requests.post(f"{API_URL}/queue", json=song_data)
@@ -225,13 +242,15 @@ async def play(update: Update, context: CallbackContext) -> None:
             f"‣ Duration: {song_data['duration']}\n"
             f"‣ Requested By: {song_data['requested_by']}"
         )
-        await update.message.reply_photo(
-            photo=song_data["albumArt"],
-            caption=caption,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+        if hasattr(update, 'message') and update.message:
+            await update.message.reply_photo(
+                photo=song_data["albumArt"],
+                caption=caption,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
     except requests.exceptions.RequestException as e:
-        await searching_msg.edit_text(f"❌ Backend error: {e}")
+        if searching_msg:
+            await searching_msg.edit_text(f"❌ Backend error: {e}")
         return
     send_admin_report(context.application)
 
@@ -303,6 +322,7 @@ async def group_join(update: Update, context: CallbackContext) -> None:
         # Optionally send report to admin group
         send_admin_report(context.application)
 
+# Update button handler to handle play_<video_id> callback
 async def button(update: Update, context: CallbackContext):
     query = update.callback_query
     await query.answer()
@@ -320,6 +340,73 @@ async def button(update: Update, context: CallbackContext):
     elif query.data == "prev":
         requests.post(f"{API_URL}/prev")
         await query.answer("Previous!")
+    elif query.data.startswith("play_"):
+        video_id = query.data.split("_", 1)[1]
+        info = context.user_data.get('multi_results', {}).get(video_id)
+        if not info:
+            await query.edit_message_text("Song info not found. Please try again.")
+            return
+        # Download and play/add the selected song
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'outtmpl': os.path.join(MP3_FOLDER, '%(id)s.%(ext)s'),
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+            }],
+            'quiet': True,
+        }
+        try:
+            import yt_dlp
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([info['webpage_url']])
+            filename = f"{video_id}.mp3"
+            file_path = os.path.join(MP3_FOLDER, filename)
+            if not os.path.exists(file_path):
+                await query.edit_message_text(f"❌ Download failed. Check ffmpeg is installed.")
+                return
+            title = info.get('title', "Unknown Title")
+            artist = info.get('uploader', 'Unknown Artist')
+            thumbnail = info.get('thumbnail') or 'https://i.ibb.co/G5rGWWd/default-album-art.png'
+            duration = info.get('duration', 0)
+            duration_str = f"{int(duration // 60)}:{int(duration % 60):02d}" if duration else "N/A"
+            src_filename = filename
+            song_data = {
+                "title": title,
+                "artist": artist,
+                "video_id": video_id,
+                "src": src_filename,
+                "albumArt": thumbnail,
+                "duration": duration_str,
+                "requested_by": query.from_user.first_name if hasattr(query, 'from_user') and query.from_user and hasattr(query.from_user, 'first_name') else "User"
+            }
+            response = requests.post(f"{API_URL}/queue", json=song_data)
+            response.raise_for_status()
+            backend_response = response.json()
+            keyboard = [
+                [InlineKeyboardButton("▶️ LAUNCH ROOM", web_app=WebAppInfo(url=MINI_APP_URL))],
+                [
+                    InlineKeyboardButton("⏮️", callback_data="prev"),
+                    InlineKeyboardButton("⏸️", callback_data="pause"),
+                    InlineKeyboardButton("▶️", callback_data="play"),
+                    InlineKeyboardButton("⏭️", callback_data="skip")
+                ],
+                [InlineKeyboardButton("❌ CLOSE ROOM", callback_data="close_room")]
+            ]
+            caption = (
+                ("- Added to Queue\n\n" if backend_response.get("success") else "- Already in Queue\n\n") +
+                f"‣ Title: {song_data['title']}\n"
+                f"‣ Duration: {song_data['duration']}\n"
+                f"‣ Requested By: {song_data['requested_by']}"
+            )
+            await query.edit_message_media(
+                media=InputMediaPhoto(media=song_data["albumArt"], caption=caption),
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        except Exception as e:
+            await query.edit_message_text(f"❌ Error: {e}")
+        return
 
 # --- Main Bot Execution ---
 

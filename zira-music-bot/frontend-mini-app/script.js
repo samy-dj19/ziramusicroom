@@ -399,6 +399,45 @@ function renderSearchResults(results) {
   container.style.display = 'block';
 }
 
+function renderMultipleResults(results) {
+  let container = document.getElementById('search-results');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'search-results';
+    container.className = 'search-results-modal';
+    document.body.appendChild(container);
+  }
+  container.innerHTML = '<h3>Select a song to play:</h3>';
+  const ul = document.createElement('ul');
+  ul.className = 'ai-multi-list';
+  results.forEach((song, idx) => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${song.title} - ${song.artist}</span>
+      <button class="inline-btn launch-btn">Launch Room</button>
+      <button class="inline-btn close-btn">Close</button>
+    `;
+    // Launch Room button
+    li.querySelector('.launch-btn').onclick = () => {
+      audioPlayer.src = song.src;
+      audioPlayer.style.display = 'block';
+      audioPlayer.play();
+      showToast(`Now playing: ${song.title} - ${song.artist}`);
+      addToHistory(song);
+      container.style.display = 'none';
+      // Optionally, open a room UI here
+    };
+    // Close button
+    li.querySelector('.close-btn').onclick = () => {
+      li.remove();
+      if (ul.children.length === 0) container.style.display = 'none';
+    };
+    ul.appendChild(li);
+  });
+  container.appendChild(ul);
+  container.style.display = 'block';
+}
+
 // --- Stats Modal Polished ---
 function showStats() {
   let modal = document.getElementById('stats-modal');
@@ -448,3 +487,57 @@ function addMiniAppIntegration() {
   }
 }
 addMiniAppIntegration();
+
+function addToHistory(song) {
+  let history = JSON.parse(localStorage.getItem('songHistory') || '[]');
+  if (!history.includes(song.title)) {
+    history.push(song.title);
+    localStorage.setItem('songHistory', JSON.stringify(history));
+  }
+}
+
+async function personalRecommend() {
+  let history = JSON.parse(localStorage.getItem('songHistory') || '[]');
+  const response = await fetch('http://localhost:8000/personal_recommend', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ history })
+  });
+  const data = await response.json();
+  if (data.recommendations && data.recommendations.length > 0) {
+    const song = data.recommendations[0];
+    audioPlayer.src = song.src;
+    audioPlayer.style.display = 'block';
+    audioPlayer.play();
+    showToast(`Recommended: ${song.title} - ${song.artist}`);
+    addToHistory(song);
+  } else {
+    showToast('No recommendations found.', true);
+  }
+}
+
+function aiPlayRequestFromSearch() {
+  const query = document.getElementById('search-bar').value;
+  if (!query) return;
+  aiPlayRequestWithQuery(query);
+}
+
+async function aiPlayRequestWithQuery(query) {
+  const response = await fetch('http://localhost:8000/ai_play', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query })
+  });
+  const data = await response.json();
+  if (data.song) {
+    audioPlayer.src = data.song.src;
+    audioPlayer.style.display = 'block';
+    audioPlayer.play();
+    showToast(`Now playing: ${data.song.title} - ${data.song.artist}`);
+    addToHistory(data.song);
+  } else if (data.multiple) {
+    renderMultipleResults(data.multiple);
+  } else {
+    showToast('No matching song found.', true);
+  }
+}

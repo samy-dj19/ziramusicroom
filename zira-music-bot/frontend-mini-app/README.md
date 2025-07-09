@@ -12,6 +12,7 @@ A beautiful, immersive, and modern music experience for Telegram, with real-time
 - **Error Handling:** User-friendly toast notifications for errors and important actions.
 - **Mini App Integration:** Seamless experience when launched from Telegram, with a "Back to Telegram" button.
 - **Production Readiness:** Health checks and environment variable support for deployment.
+- **AI-Powered Music Playback:** Type a song name and let the AI play it for you instantly!
 
 ## Usage
 - Open the app in Telegram or your browser.
@@ -19,9 +20,10 @@ A beautiful, immersive, and modern music experience for Telegram, with real-time
 - Click "Add" to queue a song.
 - Use the player controls to play, pause, skip, or loop.
 - Click "Show Stats" to view app statistics.
+- **NEW:** Type a song name in the "Ask AI to Play" box and click the button. The AI will find and play the song for you!
 
 ## Deployment
-- Ensure backend endpoints `/api/search` and `/api/stats` are available.
+- Ensure backend endpoints `/api/search`, `/api/stats`, and `/ai_play` are available.
 - Set environment variables as needed for production.
 - For best experience, deploy with HTTPS and proper CORS settings.
 
@@ -29,6 +31,7 @@ A beautiful, immersive, and modern music experience for Telegram, with real-time
 - Edit `script.js` for logic and UI.
 - Edit `style.css` for custom styles.
 - Edit `index.html` for layout and structure.
+- Edit `ai-service/main.py` to improve or expand AI features.
 
 ---
 For more details, see the main project README. 
