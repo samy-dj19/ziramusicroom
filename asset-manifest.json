@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/ziramusicroom/static/css/main.e6c13ad2.css",
+    "main.js": "/ziramusicroom/static/js/main.a153734b.js",
+    "static/js/453.670e15c7.chunk.js": "/ziramusicroom/static/js/453.670e15c7.chunk.js",
+    "index.html": "/ziramusicroom/index.html",
+    "main.e6c13ad2.css.map": "/ziramusicroom/static/css/main.e6c13ad2.css.map",
+    "main.a153734b.js.map": "/ziramusicroom/static/js/main.a153734b.js.map",
+    "453.670e15c7.chunk.js.map": "/ziramusicroom/static/js/453.670e15c7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.a153734b.js"
+  ]
+}
