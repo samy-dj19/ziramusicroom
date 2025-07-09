@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zira Music Room</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="assets/images/default_album_art.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="animated-gradient-bg"></div>
+    <div class="moving-gradient-bar"></div>
+    <div class="moving-gradient-bar bar2"></div>
+    <div class="floating-svg-note">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="#f472b6" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 10V28a6 6 0 1 1-2-4.47V10z" fill="#f472b6"/>
+            <circle cx="28" cy="32" r="4" fill="#fff" opacity="0.5"/>
+        </svg>
+    </div>
+    <div class="floating-svg-star">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" stroke="#a78bfa" stroke-width="2.5" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="18,3 22,14 34,14 24,21 28,33 18,26 8,33 12,21 2,14 14,14" fill="#a78bfa"/>
+        </svg>
+    </div>
+    <div class="floating-shapes"></div>
+    <canvas id="three-bg"></canvas>
+    <div class="zira-music-room-container">
+        <div class="zira-music-room-header">
+            <img src="assets/images/default_album_art.png" alt="Zira Music Room Logo" class="zira-music-room-logo" />
+            <h1 class="zira-music-room-title">Zira Music Room</h1>
+            <p class="zira-music-room-desc">A beautiful, immersive, and modern music experience.</p>
+        </div>
+        <div class="search-bar-container">
+            <input type="text" id="search-bar" class="search-bar" placeholder="Search for songs, artists, albums..." />
+            <button class="search-icon-btn" title="Search">
+                <svg width="22" height="22" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+        </div>
+        <div class="zira-music-player">
+            <div class="album-art-container">
+                <img id="album-art" src="assets/images/default_album_art.png" alt="Album Art" class="album-art" />
+            </div>
+            <div class="track-info">
+                <span id="track-title" class="track-title">Track Title</span>
+                <span id="track-artist" class="track-artist">Artist Name</span>
+            </div>
+            <div class="progress-bar-container">
+                <span id="current-time" class="progress-time">0:00</span>
+                <div class="progress-bar" id="progress-bar">
+                    <div class="progress-bar-inner" id="progress-bar-inner" style="width: 20%;"></div>
+                </div>
+                <span id="duration" class="progress-time">3:45</span>
+            </div>
+            <div class="music-controls">
+                <button id="prev-btn" class="music-btn" title="Previous">
+                    <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="19 20 9 12 19 4 19 20"/>
+                        <rect x="5" y="4" width="4" height="16"/>
+                    </svg>
+                </button>
+                <button id="play-pause-btn" class="music-btn play-pause" title="Play/Pause">
+                    <svg id="play-pause-icon" width="28" height="28" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                </button>
+                <button id="next-btn" class="music-btn" title="Next">
+                    <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polygon points="5 4 15 12 5 20 5 4"/>
+                        <rect x="15" y="4" width="4" height="16"/>
+                    </svg>
+                </button>
+                <button id="loop-btn" class="music-btn" title="Loop">
+                    <svg width="24" height="24" fill="none" stroke="#a78bfa" stroke-width="2" viewBox="0 0 24 24">
+                        <polyline points="17 1 21 5 17 9"/>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                        <polyline points="7 23 3 19 7 15"/>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                    </svg>
+                </button>
+                <input id="volume-slider" type="range" min="0" max="100" value="50" class="volume-slider" />
+            </div>
+            <div class="playlist-container">
+                <h3>Up Next</h3>
+                <ul id="playlist" class="playlist">
+                    <li class="playlist-item active"><span>Track 1</span></li>
+                    <li class="playlist-item"><span>Track 2</span></li>
+                    <li class="playlist-item"><span>Track 3</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <div id="toast" class="toast"></div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 // --- three.js 3D background ---
 let scene, camera, renderer, shapes = [];
-let isPlaying = false;
+    let isPlaying = false;
 function initThreeBG() {
   const canvas = document.getElementById('three-bg');
   scene = new THREE.Scene();
@@ -121,7 +121,7 @@ function startFloatingShapes() {
       ) {
         shape.remove();
         return;
-      }
+    }
       requestAnimationFrame(animate);
     }
     animate();
@@ -146,7 +146,7 @@ playPauseBtn.addEventListener('click', () => {
     playPauseBtn.classList.add('active');
     // Pause SVG
     playPauseIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
-  } else {
+    } else {
     playPauseBtn.classList.remove('active');
     // Play SVG
     playPauseIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
@@ -174,4 +174,169 @@ searchBar.addEventListener('focus', () => {
 });
 searchBar.addEventListener('blur', () => {
   document.querySelector('.search-bar-container').classList.remove('focus');
+});
+
+// --- Music Player Logic ---
+const audioPlayer = document.getElementById('audio-player');
+const playlistEl = document.getElementById('playlist');
+const playPauseBtn2 = document.getElementById('play-pause-btn');
+const playPauseIcon2 = document.getElementById('play-pause-icon');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const loopBtn = document.getElementById('loop-btn');
+const volumeSlider = document.getElementById('volume-slider');
+const progressBar2 = document.getElementById('progress-bar');
+const progressBarInner2 = document.getElementById('progress-bar-inner');
+const trackTitle = document.getElementById('track-title');
+const trackArtist = document.getElementById('track-artist');
+const albumArt = document.getElementById('album-art');
+const currentTimeEl = document.getElementById('current-time');
+const durationEl = document.getElementById('duration');
+
+// Example song list (should be fetched from backend or static for demo)
+// Use absolute paths for Flask static serving
+const songs = [
+  { title: 'Track 1', artist: 'Artist 1', src: '/static/mp3/58xKTGxmeHI.mp3', albumArt: 'assets/images/default_album_art.png' },
+  { title: 'Track 2', artist: 'Artist 2', src: '/static/mp3/7JDX250dGNs.mp3', albumArt: 'assets/images/default_album_art.png' },
+  { title: 'Track 3', artist: 'Artist 3', src: '/static/mp3/a0goLSCAcBw.mp3', albumArt: 'assets/images/default_album_art.png' }
+];
+let currentSongIndex = 0;
+let isUserSeeking = false;
+
+function renderPlaylist() {
+  playlistEl.innerHTML = '';
+  songs.forEach((song, idx) => {
+    const li = document.createElement('li');
+    li.className = 'playlist-item' + (idx === currentSongIndex ? ' active' : '');
+    li.innerHTML = `<span>${song.title}</span>`;
+    li.addEventListener('click', () => playSong(idx));
+    playlistEl.appendChild(li);
+  });
+}
+
+function playSong(idx) {
+  currentSongIndex = idx;
+  const song = songs[idx];
+  audioPlayer.src = song.src;
+  trackTitle.textContent = song.title;
+  trackArtist.textContent = song.artist;
+  albumArt.src = song.albumArt;
+  renderPlaylist();
+  audioPlayer.play();
+  isPlaying = true;
+  updatePlayPauseIcon();
+}
+
+function updatePlayPauseIcon() {
+  if (isPlaying) {
+    playPauseBtn2.classList.add('active');
+    playPauseIcon2.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  } else {
+    playPauseBtn2.classList.remove('active');
+    playPauseIcon2.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+  }
+}
+
+playPauseBtn2.addEventListener('click', () => {
+  if (audioPlayer.paused) {
+    audioPlayer.play();
+    isPlaying = true;
+  } else {
+    audioPlayer.pause();
+    isPlaying = false;
+  }
+  updatePlayPauseIcon();
+});
+
+audioPlayer.addEventListener('play', () => { isPlaying = true; updatePlayPauseIcon(); });
+audioPlayer.addEventListener('pause', () => { isPlaying = false; updatePlayPauseIcon(); });
+audioPlayer.addEventListener('ended', () => {
+  if (audioPlayer.loop) return;
+  nextSong();
+});
+
+function nextSong() {
+  let nextIdx = (currentSongIndex + 1) % songs.length;
+  playSong(nextIdx);
+}
+function prevSong() {
+  let prevIdx = (currentSongIndex - 1 + songs.length) % songs.length;
+  playSong(prevIdx);
+}
+nextBtn.addEventListener('click', nextSong);
+prevBtn.addEventListener('click', prevSong);
+
+loopBtn.addEventListener('click', () => {
+  audioPlayer.loop = !audioPlayer.loop;
+  loopBtn.classList.toggle('active', audioPlayer.loop);
+});
+
+volumeSlider.addEventListener('input', () => {
+  audioPlayer.volume = volumeSlider.value / 100;
+});
+
+audioPlayer.addEventListener('timeupdate', () => {
+  if (!isUserSeeking) {
+    const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+    progressBarInner2.style.width = percent + '%';
+    currentTimeEl.textContent = formatTime(audioPlayer.currentTime);
+    durationEl.textContent = formatTime(audioPlayer.duration);
+  }
+});
+progressBar2.addEventListener('click', (e) => {
+  const rect = progressBar2.getBoundingClientRect();
+  const percent = (e.clientX - rect.left) / rect.width;
+  audioPlayer.currentTime = percent * audioPlayer.duration;
+});
+function formatTime(sec) {
+  if (isNaN(sec)) return '0:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// Handle /play <song name> command in search bar
+const searchBar2 = document.getElementById('search-bar');
+searchBar2.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const val = searchBar2.value.trim();
+    if (val.toLowerCase().startsWith('/play ')) {
+      const name = val.slice(6).toLowerCase();
+      const idx = songs.findIndex(s => s.title.toLowerCase().includes(name));
+      if (idx !== -1) {
+        playSong(idx);
+      } else {
+        alert('Song not found!');
+      }
+      searchBar2.value = '';
+    }
+  }
+});
+
+// Initial render
+renderPlaylist();
+playSong(0);
+
+// --- Room Control Panel Logic ---
+document.getElementById('panel-play-btn').addEventListener('click', () => {
+  audioPlayer.play();
+});
+document.getElementById('panel-pause-btn').addEventListener('click', () => {
+  audioPlayer.pause();
+});
+document.getElementById('panel-next-btn').addEventListener('click', nextSong);
+document.getElementById('panel-prev-btn').addEventListener('click', prevSong);
+document.getElementById('panel-loop-btn').addEventListener('click', () => {
+  audioPlayer.loop = !audioPlayer.loop;
+  document.getElementById('panel-loop-btn').classList.toggle('active', audioPlayer.loop);
+  loopBtn.classList.toggle('active', audioPlayer.loop);
+});
+
+document.getElementById('launch-room-btn').addEventListener('click', () => {
+  // TODO: Implement backend call to launch room
+  alert('Launch Room: This will connect to the backend to launch a room.');
+});
+document.getElementById('close-room-btn').addEventListener('click', () => {
+  // TODO: Implement backend call to close room
+  alert('Close Room: This will connect to the backend to close the room.');
 });

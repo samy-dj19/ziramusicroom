@@ -1560,3 +1560,35 @@ svg {
   opacity: 1 !important;
   z-index: 10;
 }
+.room-control-panel {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.room-btn {
+    background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #7c3aed33;
+    transition: background 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.room-btn i {
+    font-size: 1.1em;
+}
+.room-btn:hover, .room-btn:focus {
+    background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+    color: #fff;
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px #a78bfa55;
+}

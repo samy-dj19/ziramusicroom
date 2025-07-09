@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="assets/images/default_album_art.png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 </head>
 <body>
     <div class="animated-gradient-bg"></div>
@@ -27,6 +28,15 @@
     <div class="floating-shapes"></div>
     <canvas id="three-bg"></canvas>
     <div class="zira-music-room-container">
+        <div class="room-control-panel" style="display: flex; gap: 12px; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
+            <button id="launch-room-btn" class="room-btn" title="Launch Room"><i class="fa-solid fa-door-open"></i> Launch Room</button>
+            <button id="close-room-btn" class="room-btn" title="Close Room"><i class="fa-solid fa-door-closed"></i> Close Room</button>
+            <button id="panel-play-btn" class="room-btn" title="Play"><i class="fa-solid fa-play"></i></button>
+            <button id="panel-pause-btn" class="room-btn" title="Pause"><i class="fa-solid fa-pause"></i></button>
+            <button id="panel-next-btn" class="room-btn" title="Next"><i class="fa-solid fa-forward"></i></button>
+            <button id="panel-prev-btn" class="room-btn" title="Previous"><i class="fa-solid fa-backward"></i></button>
+            <button id="panel-loop-btn" class="room-btn" title="Loop"><i class="fa-solid fa-repeat"></i></button>
+        </div>
         <div class="zira-music-room-header">
             <img src="assets/images/default_album_art.png" alt="Zira Music Room Logo" class="zira-music-room-logo" />
             <h1 class="zira-music-room-title">Zira Music Room</h1>
@@ -84,6 +94,7 @@
                 </button>
                 <input id="volume-slider" type="range" min="0" max="100" value="50" class="volume-slider" />
             </div>
+            <audio id="audio-player" preload="auto" style="display:none;"></audio>
             <div class="playlist-container">
                 <h3>Up Next</h3>
                 <ul id="playlist" class="playlist">
