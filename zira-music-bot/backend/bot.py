@@ -130,17 +130,34 @@ async def help_command(update: Update, context: CallbackContext) -> None:
     )
     await update.message.reply_html(help_text)
 
+# --- Health Check Command ---
+async def health(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text("Bot is running and healthy!")
+
+# --- Statistics Command ---
+async def stats(update: Update, context: CallbackContext) -> None:
+    users = get_all_users()
+    c.execute('SELECT title, COUNT(*) as cnt FROM users, songs WHERE users.user_id = songs.user_id GROUP BY title ORDER BY cnt DESC LIMIT 5')
+    top_songs = c.fetchall() if c.description else []
+    msg = f"<b>Bot Stats</b>\n\n<b>Total Users:</b> {len(users)}\n"
+    if top_songs:
+        msg += "<b>Top Songs:</b>\n"
+        for i, (title, cnt) in enumerate(top_songs):
+            msg += f"{i+1}. {title} ({cnt} plays)\n"
+    else:
+        msg += "No song stats available.\n"
+    await update.message.reply_html(msg)
+
+# --- Enhanced /play Command ---
 async def play(update: Update, context: CallbackContext) -> None:
     if not context.args:
-        await update.message.reply_text("Usage: /play <song name>")
+        await update.message.reply_text("Usage: /play <song name or artist - song>")
         return
-
-    song_name = " ".join(context.args)
+    song_query = " ".join(context.args)
     searching_msg = await update.message.reply_text("⏳ Searching and downloading...")
-
     ydl_opts = {
         'format': 'bestaudio/best',
-        'outtmpl': os.path.join(MP3_FOLDER, '%(id)s.%(ext)s'), # Use absolute path
+        'outtmpl': os.path.join(MP3_FOLDER, '%(id)s.%(ext)s'),
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
@@ -151,53 +168,47 @@ async def play(update: Update, context: CallbackContext) -> None:
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(f"ytsearch1:{song_name}", download=True).get('entries', [{}])[0]
-
-            video_id = info.get('id')
-            if not video_id:
-                await searching_msg.edit_text(f"❌ Could not find a playable song for '{song_name}'.")
+            info_list = ydl.extract_info(f"ytsearch5:{song_query}", download=False)['entries']
+            if not info_list:
+                await searching_msg.edit_text(f"❌ No results for '{song_query}'.")
                 return
-
+            # If multiple, show options
+            if len(info_list) > 1:
+                options = [f"{i+1}. {info['title']} - {info.get('uploader', 'Unknown')}" for i, info in enumerate(info_list)]
+                await searching_msg.edit_text("Multiple results found:\n" + "\n".join(options) + "\nReply with /play <number> to select.")
+                return
+            info = info_list[0]
+            # Download the selected song
+            ydl.download([info['webpage_url']])
+            video_id = info.get('id')
             filename = f"{video_id}.mp3"
             file_path = os.path.join(MP3_FOLDER, filename)
-
             if not os.path.exists(file_path):
-                await searching_msg.edit_text(f"❌ Download failed. Check ffmpeg is installed and accessible in your system's PATH.")
+                await searching_msg.edit_text(f"❌ Download failed. Check ffmpeg is installed.")
                 return
-
             title = info.get('title', "Unknown Title")
             artist = info.get('uploader', 'Unknown Artist')
-            thumbnail = info.get('thumbnail')
-            if not (thumbnail and thumbnail.startswith('http')):
-                # Provide a valid, public default image URL
-                thumbnail = 'https://i.ibb.co/G5rGWWd/default-album-art.png'
+            thumbnail = info.get('thumbnail') or 'https://i.ibb.co/G5rGWWd/default-album-art.png'
             duration = info.get('duration', 0)
             duration_str = f"{int(duration // 60)}:{int(duration % 60):02d}" if duration else "N/A"
-            
-            # The 'src' should just be the filename, the frontend will build the full URL
             src_filename = filename
-
     except Exception as e:
-        await searching_msg.edit_text(f"❌ An error occurred: {e}")
-        logger.error(f"Error in /play command for query '{song_name}': {e}", exc_info=True)
+        await searching_msg.edit_text(f"❌ Error: {e}")
+        logger.error(f"Error in /play: {e}", exc_info=True)
         return
-
     song_data = {
         "title": title,
         "artist": artist,
-        "video_id": video_id, # Important for duplicate checking
-        "src": src_filename, # Just the filename
+        "video_id": video_id,
+        "src": src_filename,
         "albumArt": thumbnail,
         "duration": duration_str,
         "requested_by": update.effective_user.first_name
     }
-
     try:
         response = requests.post(f"{API_URL}/queue", json=song_data)
-        response.raise_for_status() # Raise an exception for bad status codes
+        response.raise_for_status()
         backend_response = response.json()
-        
-        # Always send the control message, whether new or already in queue
         keyboard = [
             [InlineKeyboardButton("▶️ LAUNCH ROOM", web_app=WebAppInfo(url=MINI_APP_URL))],
             [
@@ -220,10 +231,8 @@ async def play(update: Update, context: CallbackContext) -> None:
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
     except requests.exceptions.RequestException as e:
-        await searching_msg.edit_text(f"❌ Failed to communicate with the backend server. Is it running? Error: {e}")
+        await searching_msg.edit_text(f"❌ Backend error: {e}")
         return
-
-    # After adding song, optionally send report to admin group:
     send_admin_report(context.application)
 
 async def unknown_command(update: Update, context: CallbackContext) -> None:
@@ -328,6 +337,8 @@ def main():
     app.add_handler(CommandHandler("playlist", playlist))
     app.add_handler(CommandHandler("end", end))
     app.add_handler(CommandHandler("users", users_command))
+    app.add_handler(CommandHandler("health", health))
+    app.add_handler(CommandHandler("stats", stats))
     app.add_handler(ChatMemberHandler(group_join, ChatMemberHandler.CHAT_MEMBER))
 
     # Handler for unknown commands

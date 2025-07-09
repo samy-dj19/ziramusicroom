@@ -1592,3 +1592,124 @@ svg {
     transform: scale(1.08);
     box-shadow: 0 4px 16px #a78bfa55;
 }
+
+/* --- Search Results Modal --- */
+.search-results-modal {
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(80,40,160,0.18);
+  z-index: 1002;
+  padding: 18px 24px;
+  min-width: 320px;
+  max-width: 90vw;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: none;
+}
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+.search-result-art {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(160,120,240,0.08);
+}
+.search-result-info {
+  flex: 1;
+}
+.search-result-title {
+  font-weight: 600;
+  color: #4f46e5;
+  font-size: 1.1em;
+}
+.search-result-artist {
+  color: #818cf8;
+  font-size: 0.97em;
+}
+.search-result-duration {
+  color: #a1a1aa;
+  font-size: 0.93em;
+}
+.search-result-add {
+  background: #a78bfa;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.search-result-add:hover {
+  background: #7c3aed;
+}
+
+/* --- Stats Modal --- */
+.stats-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(60,30,120,0.18);
+  z-index: 1003;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.stats-modal-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 36px 24px 36px;
+  box-shadow: 0 8px 32px rgba(80,40,160,0.18);
+  min-width: 320px;
+  max-width: 90vw;
+  position: relative;
+}
+.stats-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  font-size: 1.7em;
+  color: #a78bfa;
+  cursor: pointer;
+  font-weight: bold;
+}
+.stats-modal h2 {
+  margin-top: 0;
+  color: #4f46e5;
+}
+.stats-modal h3 {
+  color: #a78bfa;
+  margin-bottom: 8px;
+}
+.stats-modal ul {
+  padding-left: 18px;
+  margin-bottom: 16px;
+}
+.stats-modal li {
+  margin-bottom: 4px;
+  color: #4b5563;
+}
+.stats-btn {
+  background: #a78bfa;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 1em;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.stats-btn:hover {
+  background: #7c3aed;
+}

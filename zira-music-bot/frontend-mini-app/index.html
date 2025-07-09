@@ -28,19 +28,12 @@
     <div class="floating-shapes"></div>
     <canvas id="three-bg"></canvas>
     <div class="zira-music-room-container">
-        <div class="room-control-panel" style="display: flex; gap: 12px; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
-            <button id="launch-room-btn" class="room-btn" title="Launch Room"><i class="fa-solid fa-door-open"></i> Launch Room</button>
-            <button id="close-room-btn" class="room-btn" title="Close Room"><i class="fa-solid fa-door-closed"></i> Close Room</button>
-            <button id="panel-play-btn" class="room-btn" title="Play"><i class="fa-solid fa-play"></i></button>
-            <button id="panel-pause-btn" class="room-btn" title="Pause"><i class="fa-solid fa-pause"></i></button>
-            <button id="panel-next-btn" class="room-btn" title="Next"><i class="fa-solid fa-forward"></i></button>
-            <button id="panel-prev-btn" class="room-btn" title="Previous"><i class="fa-solid fa-backward"></i></button>
-            <button id="panel-loop-btn" class="room-btn" title="Loop"><i class="fa-solid fa-repeat"></i></button>
-        </div>
+        <!-- Removed the room-control-panel for a cleaner UI -->
         <div class="zira-music-room-header">
             <img src="assets/images/default_album_art.png" alt="Zira Music Room Logo" class="zira-music-room-logo" />
             <h1 class="zira-music-room-title">Zira Music Room</h1>
             <p class="zira-music-room-desc">A beautiful, immersive, and modern music experience.</p>
+            <button onclick="showStats()" class="stats-btn">Show Stats</button>
         </div>
         <div class="search-bar-container">
             <input type="text" id="search-bar" class="search-bar" placeholder="Search for songs, artists, albums..." />
@@ -107,5 +100,6 @@
     </div>
     <script src="script.js"></script>
     <div id="toast" class="toast"></div>
+    <div id="search-results"></div>
 </body>
 </html>

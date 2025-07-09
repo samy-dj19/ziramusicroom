@@ -340,3 +340,111 @@ document.getElementById('close-room-btn').addEventListener('click', () => {
   // TODO: Implement backend call to close room
   alert('Close Room: This will connect to the backend to close the room.');
 });
+
+// --- Toast Notification Utility ---
+function showToast(message, isError = false) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast' + (isError ? ' error' : '');
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, 3500);
+}
+
+// --- Enhanced Search ---
+async function searchSongs(query) {
+  if (!query) return;
+  try {
+    // Example: support artist - song or album - song
+    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    if (!response.ok) throw new Error('Search failed');
+    const results = await response.json();
+    if (!results.length) {
+      showToast('No results found.', true);
+      return;
+    }
+    // Render results (show all, not just first)
+    renderSearchResults(results);
+  } catch (e) {
+    showToast('Error searching: ' + e.message, true);
+  }
+}
+function renderSearchResults(results) {
+  let container = document.getElementById('search-results');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'search-results';
+    container.className = 'search-results-modal';
+    document.body.appendChild(container);
+  }
+  container.innerHTML = '';
+  results.forEach(result => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item';
+    item.innerHTML = `
+      <img src="${result.albumArt || 'assets/images/default_album_art.png'}" class="search-result-art" />
+      <div class="search-result-info">
+        <div class="search-result-title">${result.title}</div>
+        <div class="search-result-artist">${result.artist}</div>
+        <div class="search-result-duration">${result.duration || ''}</div>
+      </div>
+      <button class="search-result-add">Add</button>
+    `;
+    item.querySelector('.search-result-add').onclick = () => {
+      // Add song to queue logic here
+      showToast('Added to queue!');
+      container.style.display = 'none';
+    };
+    container.appendChild(item);
+  });
+  container.style.display = 'block';
+}
+
+// --- Stats Modal Polished ---
+function showStats() {
+  let modal = document.getElementById('stats-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'stats-modal';
+    modal.className = 'stats-modal';
+    modal.innerHTML = `
+      <div class="stats-modal-content">
+        <span class="stats-modal-close">&times;</span>
+        <h2>App Statistics</h2>
+        <div id="stats-content">Loading...</div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('.stats-modal-close').onclick = () => {
+      modal.style.display = 'none';
+    };
+  }
+  modal.style.display = 'block';
+  fetch('/api/stats').then(r => r.json()).then(stats => {
+    let html = '';
+    if (stats.topSongs && stats.topSongs.length) {
+      html += '<h3>Top Songs</h3><ul>';
+      stats.topSongs.forEach(song => {
+        html += `<li>${song.title} - ${song.artist} (${song.plays} plays)</li>`;
+      });
+      html += '</ul>';
+    }
+    html += `<div><b>Total Users:</b> ${stats.totalUsers || 0}</div>`;
+    html += `<div><b>Total Plays:</b> ${stats.totalPlays || 0}</div>`;
+    document.getElementById('stats-content').innerHTML = html;
+  }).catch(e => {
+    document.getElementById('stats-content').innerHTML = 'Failed to load stats.';
+  });
+}
+
+// --- Mini App Integration ---
+function addMiniAppIntegration() {
+  // Add a "Back to Telegram" button if in mini app context
+  if (window.Telegram && Telegram.WebApp) {
+    const btn = document.createElement('button');
+    btn.textContent = 'Back to Telegram';
+    btn.className = 'miniapp-back-btn';
+    btn.onclick = () => Telegram.WebApp.close();
+    document.body.appendChild(btn);
+  }
+}
+addMiniAppIntegration();
